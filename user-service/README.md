@@ -77,10 +77,33 @@ While running, the in-memory database can be inspected at:
 
 > **http://localhost:8081/h2-console**
 
-JDBC URL: `jdbc:h2:mem:userdb` | User: `sa` | Password: *(empty)*
+JDBC URL: `jdbc:h2:mem:userdb;DB_CLOSE_DELAY=-1` | User: `sa` | Password: *(empty)*
+
+## Default Admin Credentials
+
+> [!WARNING]
+> **FOR DEVELOPMENT/TESTING ONLY — change or remove before any real deployment.**
+
+On application startup, a default administrator account is automatically seeded if one does not already exist:
+
+| Property | Value |
+|---|---|
+| **Username** | `admin` |
+| **Password** | `Admin@12345` |
+| **Email** | `admin@marketgrid.com` |
+| **Role** | `ADMIN` |
+
+To authenticate as admin and obtain a JWT token:
+
+```bash
+curl -X POST http://localhost:8081/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin@12345"}'
+```
 
 ## JWT Notes
 
 - Tokens embed `userId`, `username`, and `role` claims
 - Expiration: 24 hours (configurable via `jwt.expiration-ms`)
 - The `jwt.secret` property **must be identical** across every service that validates tokens
+
