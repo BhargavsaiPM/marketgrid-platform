@@ -1,0 +1,10 @@
+# =============================================================
+# Product Service — centralised configuration
+# =============================================================
+# This file will hold configuration for the product-service, e.g.:
+#   - datasource (URL, username, password)
+#   - catalog / search settings
+#   - service-specific feature flags
+#
+# Values will be populated phase by phase.
+# =============================================================

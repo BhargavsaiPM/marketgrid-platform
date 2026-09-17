@@ -1,0 +1,42 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: vendor-service
+
+  # Pull additional config from config-server
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  # H2 in-memory database
+  datasource:
+    url: jdbc:h2:mem:vendordb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Eureka registration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# -------------------------------------------------------------------
+# JWT configuration
+# IMPORTANT: This secret MUST be EXACTLY the same value used in
+# user-service so that tokens issued there validate correctly here.
+# -------------------------------------------------------------------
+jwt:
+  secret: bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==

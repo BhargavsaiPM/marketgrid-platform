@@ -1,0 +1,59 @@
+# docker-compose.yml — MarketGrid Commerce
+# Services will be added as each module is implemented.
+
+version: "3.9"
+
+services:
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  # config-server:
+  #   build: ./config-server
+  #   container_name: config-server
+  #   ports:
+  #     - "8888:8888"
+  #   depends_on:
+  #     - eureka-server
+
+  # api-gateway:
+  #   build: ./api-gateway
+  #   container_name: api-gateway
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - eureka-server
+  #     - config-server
+
+  # user-service:
+  #   build: ./user-service
+  #   container_name: user-service
+  #   depends_on:
+  #     - eureka-server
+  #     - config-server
+
+  # vendor-service:
+  #   build: ./vendor-service
+  #   container_name: vendor-service
+  #   depends_on:
+  #     - eureka-server
+  #     - config-server
+
+  # product-service:
+  #   build: ./product-service
+  #   container_name: product-service
+  #   depends_on:
+  #     - eureka-server
+  #     - config-server
+
+  # order-service:
+  #   build: ./order-service
+  #   container_name: order-service
+  #   depends_on:
+  #     - eureka-server
+  #     - config-server

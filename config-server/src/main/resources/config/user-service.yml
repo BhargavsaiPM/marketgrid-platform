@@ -1,0 +1,10 @@
+# =============================================================
+# User Service — centralised configuration
+# =============================================================
+# This file will hold configuration for the user-service, e.g.:
+#   - datasource (URL, username, password)
+#   - JWT / security settings
+#   - service-specific feature flags
+#
+# Values will be populated phase by phase.
+# =============================================================
