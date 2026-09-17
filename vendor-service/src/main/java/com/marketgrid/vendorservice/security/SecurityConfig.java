@@ -39,6 +39,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/vendors").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vendors/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/vendors/pending").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/vendors/{vendorId}").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()

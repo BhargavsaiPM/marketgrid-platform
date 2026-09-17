@@ -36,6 +36,9 @@ public class ProductController {
     // -----------------------------------------------------------
 
     private boolean hasRole(Authentication auth, String role) {
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
         return auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(a -> a.equals("ROLE_" + role));
@@ -179,7 +182,14 @@ public class ProductController {
      */
     @PatchMapping("/{productId}/stock")
     public ResponseEntity<?> decreaseStock(@PathVariable Long productId,
-                                           @RequestBody StockDecreaseRequest request) {
+                                           @RequestBody StockDecreaseRequest request,
+                                           Authentication authentication) {
+        // TODO: In a production system, this should also allow trusted internal service-to-service calls (e.g. from order-service), not just ADMIN users.
+        if (!hasRole(authentication, "ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only users with the ADMIN role can decrement stock"));
+        }
+
         try {
             Product updated = productService.decreaseStock(productId, request.getQuantity());
             return ResponseEntity.ok(ProductResponse.fromEntity(updated));

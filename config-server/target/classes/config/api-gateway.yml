@@ -1,0 +1,10 @@
+# =============================================================
+# API Gateway — centralised configuration
+# =============================================================
+# This file will hold configuration for the api-gateway, e.g.:
+#   - route definitions
+#   - CORS settings
+#   - rate-limiting / circuit-breaker config
+#
+# Values will be populated phase by phase.
+# =============================================================

@@ -1,6 +1,7 @@
 package com.marketgrid.userservice.controller;
 
 import com.marketgrid.userservice.dto.*;
+import com.marketgrid.userservice.entity.Role;
 import com.marketgrid.userservice.entity.User;
 import com.marketgrid.userservice.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,13 @@ public class UserController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        if (request.getRole() == Role.ADMIN) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Cannot self-register as ADMIN"));
+        }
+        if (request.getRole() != Role.CUSTOMER && request.getRole() != Role.VENDOR) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Role must be either CUSTOMER or VENDOR"));
+        }
+
         try {
             User user = userService.register(
                     request.getUsername(),

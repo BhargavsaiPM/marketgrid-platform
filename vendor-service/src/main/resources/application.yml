@@ -11,7 +11,7 @@ spring:
 
   # H2 in-memory database
   datasource:
-    url: jdbc:h2:mem:vendordb
+    url: jdbc:h2:mem:vendordb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:

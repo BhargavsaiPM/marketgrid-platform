@@ -1,0 +1,10 @@
+# =============================================================
+# Order Service — centralised configuration
+# =============================================================
+# This file will hold configuration for the order-service, e.g.:
+#   - datasource (URL, username, password)
+#   - payment gateway credentials
+#   - service-specific feature flags
+#
+# Values will be populated phase by phase.
+# =============================================================

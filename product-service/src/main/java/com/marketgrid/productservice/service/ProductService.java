@@ -150,6 +150,10 @@ public class ProductService {
      * @throws IllegalStateException    if concurrent modification detected (client should retry)
      */
     public Product decreaseStock(Long productId, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity to decrement must be a positive number");
+        }
+
         Product product = getProductById(productId);
 
         if (product.getStockQuantity() < quantity) {
