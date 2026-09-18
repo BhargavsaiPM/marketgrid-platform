@@ -9,5 +9,6 @@ com\marketgrid\userservice\dto\UserResponse.class
 com\marketgrid\userservice\dto\LoginResponse.class
 com\marketgrid\userservice\entity\Role.class
 com\marketgrid\userservice\security\JwtAuthenticationFilter.class
+com\marketgrid\userservice\config\DataSeeder.class
 com\marketgrid\userservice\security\SecurityConfig.class
 com\marketgrid\userservice\service\UserService.class
