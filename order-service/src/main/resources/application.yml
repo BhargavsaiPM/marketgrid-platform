@@ -13,3 +13,7 @@ service:
   account:
     username: admin
     password: Admin@12345
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

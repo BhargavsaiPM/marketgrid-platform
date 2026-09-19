@@ -1,10 +1,63 @@
 # =============================================================
-# API Gateway — centralised configuration
+# API Gateway — Centralised Configuration
 # =============================================================
-# This file will hold configuration for the api-gateway, e.g.:
-#   - route definitions
-#   - CORS settings
-#   - rate-limiting / circuit-breaker config
-#
-# Values will be populated phase by phase.
-# =============================================================
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# Shared secret key used across all MarketGrid services for JWT verification
+jwt:
+  secret: bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+
+      # Global CORS configuration (Development only)
+      # NOTE: In production, allowedOrigins should be strictly restricted to the frontend application domains.
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - "*"
+
+      # Explicit route definitions pointing to downstream microservices via Eureka (lb:// scheme)
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+
+        - id: vendor-service
+          uri: lb://vendor-service
+          predicates:
+            - Path=/api/vendors/**
+
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**, /api/cart/**

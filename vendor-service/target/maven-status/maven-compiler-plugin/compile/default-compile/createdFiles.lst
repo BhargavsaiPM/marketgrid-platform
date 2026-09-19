@@ -5,6 +5,7 @@ com\marketgrid\vendorservice\VendorServiceApplication.class
 com\marketgrid\vendorservice\entity\Vendor.class
 com\marketgrid\vendorservice\util\JwtUtil.class
 com\marketgrid\vendorservice\service\VendorService.class
+com\marketgrid\vendorservice\config\OpenApiConfig.class
 com\marketgrid\vendorservice\dto\VendorResponse.class
 com\marketgrid\vendorservice\security\SecurityConfig.class
 com\marketgrid\vendorservice\security\JwtAuthenticationFilter.class

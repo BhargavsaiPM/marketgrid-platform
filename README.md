@@ -6,15 +6,28 @@ A microservices-based multi-vendor e-commerce platform built with **Spring Boot 
 
 ## Services Architecture & Ports
 
-| Service | Port | Database | Description |
-|---|---|---|---|
-| **eureka-server** | `8761` | — | Service Discovery & Registry |
-| **config-server** | `8888` | Native Git/Filesystem | Centralized Configuration Server |
-| **user-service** | `8081` | H2 (`userdb`) | User Auth, JWT Issuance, Role RBAC, Default Admin Seeder |
-| **vendor-service** | `8082` | H2 (`vendordb`) | Vendor Onboarding, Profile Management, Admin Approval |
-| **product-service** | `8083` | H2 (`productdb`) | Product Catalog, Stock Management, Category Browsing |
-| **order-service** | `8084` | H2 (`orderdb`) | Cart Management, Multi-Vendor Checkout, Vendor Order Tracking |
-| **api-gateway** | `8080` | — | Gateway Entry Point |
+| Service | Port | Database | Description | Swagger UI |
+|---|---|---|---|---|
+| **eureka-server** | `8761` | — | Service Discovery & Registry | — |
+| **config-server** | `8888` | Native Git/Filesystem | Centralized Configuration Server | — |
+| **user-service** | `8081` | H2 (`userdb`) | User Auth, JWT Issuance, Role RBAC, Default Admin Seeder | [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html) |
+| **vendor-service** | `8082` | H2 (`vendordb`) | Vendor Onboarding, Profile Management, Admin Approval | [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html) |
+| **product-service** | `8083` | H2 (`productdb`) | Product Catalog, Stock Management, Category Browsing | [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html) |
+| **order-service** | `8084` | H2 (`orderdb`) | Cart Management, Multi-Vendor Checkout, Vendor Order Tracking | [http://localhost:8084/swagger-ui.html](http://localhost:8084/swagger-ui.html) |
+| **api-gateway** | `8080` | — | Gateway Entry Point | — |
+
+---
+
+## Interactive API Documentation (Swagger UI)
+
+Each service provides interactive OpenAPI 3 documentation with Bearer JWT support. Click the **"Authorize"** button (with lock icon) in Swagger UI to paste a JWT token once, and it will be sent automatically with subsequent requests.
+
+* **User Service**: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html) (Raw docs: `/v3/api-docs`)
+* **Vendor Service**: [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html) (Raw docs: `/v3/api-docs`)
+* **Product Service**: [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html) (Raw docs: `/v3/api-docs`)
+* **Order Service**: [http://localhost:8084/swagger-ui.html](http://localhost:8084/swagger-ui.html) (Raw docs: `/v3/api-docs`)
+
+👉 **For a step-by-step tutorial on authenticating and running the full e-commerce flow directly inside Swagger UI, see [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md).**
 
 ---
 

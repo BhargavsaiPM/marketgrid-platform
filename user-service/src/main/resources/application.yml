@@ -6,3 +6,7 @@ spring:
     name: user-service
   config:
     import: configserver:http://localhost:8888
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

@@ -5,6 +5,8 @@ import com.marketgrid.productservice.dto.ProductResponse;
 import com.marketgrid.productservice.dto.StockDecreaseRequest;
 import com.marketgrid.productservice.entity.Product;
 import com.marketgrid.productservice.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +23,7 @@ import java.util.Map;
  * require a VENDOR-role JWT; the PATCH stock endpoint accepts any valid
  * JWT (intended for order-service calls).</p>
  */
+@Tag(name = "Product Management", description = "Product catalog browsing, vendor product creation, and stock updates")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -53,6 +56,7 @@ public class ProductController {
      * a Feign call to vendor-service ({@code GET /api/vendors/me}),
      * not from the request body, to prevent spoofing.
      */
+    @Operation(summary = "Create a new product (VENDOR role required)")
     @PostMapping
     public ResponseEntity<?> createProduct(@RequestBody ProductRequest request,
                                            Authentication authentication) {
@@ -89,6 +93,7 @@ public class ProductController {
      * Browse all products. Pass an optional {@code ?category=Electronics}
      * query parameter to filter by category.
      */
+    @Operation(summary = "Browse all products with optional category filter")
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts(
             @RequestParam(required = false) String category) {
@@ -103,6 +108,7 @@ public class ProductController {
     // GET /api/products/{productId} — single product detail (public)
     // -----------------------------------------------------------
 
+    @Operation(summary = "Get single product detail by product ID")
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProduct(@PathVariable Long productId) {
         try {
@@ -118,6 +124,7 @@ public class ProductController {
     // GET /api/products/vendor/{vendorId} — products by vendor (public)
     // -----------------------------------------------------------
 
+    @Operation(summary = "Get all products belonging to a vendor")
     @GetMapping("/vendor/{vendorId}")
     public ResponseEntity<List<ProductResponse>> getProductsByVendor(
             @PathVariable Long vendorId) {
@@ -136,6 +143,7 @@ public class ProductController {
      * Update a product. Only the owning vendor (verified via JWT → Feign
      * call to vendor-service) may update.
      */
+    @Operation(summary = "Update product details (owner vendor required)")
     @PutMapping("/{productId}")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
                                            @RequestBody ProductRequest request,
@@ -180,6 +188,7 @@ public class ProductController {
      * (e.g. dedicated service account or mTLS) to prevent arbitrary callers
      * from decrementing stock.</p>
      */
+    @Operation(summary = "Decrement product stock quantity (ADMIN role required)")
     @PatchMapping("/{productId}/stock")
     public ResponseEntity<?> decreaseStock(@PathVariable Long productId,
                                            @RequestBody StockDecreaseRequest request,

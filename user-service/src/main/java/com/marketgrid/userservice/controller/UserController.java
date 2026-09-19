@@ -4,6 +4,8 @@ import com.marketgrid.userservice.dto.*;
 import com.marketgrid.userservice.entity.Role;
 import com.marketgrid.userservice.entity.User;
 import com.marketgrid.userservice.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,6 +16,7 @@ import java.util.Map;
 /**
  * REST controller for user registration, authentication, and profile access.
  */
+@Tag(name = "User Management", description = "User registration, authentication, and profile endpoints")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -28,6 +31,7 @@ public class UserController {
      * POST /api/users/register
      * Public — creates a new user account.
      */
+    @Operation(summary = "Register a new user account as CUSTOMER or VENDOR")
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (request.getRole() == Role.ADMIN) {
@@ -54,6 +58,7 @@ public class UserController {
      * POST /api/users/login
      * Public — authenticates and returns a JWT.
      */
+    @Operation(summary = "Authenticate with credentials and obtain a JWT")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
@@ -69,6 +74,7 @@ public class UserController {
      * GET /api/users/me
      * Protected — returns the authenticated user's profile (JWT required).
      */
+    @Operation(summary = "Get current authenticated user profile")
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
         String username = authentication.getName();

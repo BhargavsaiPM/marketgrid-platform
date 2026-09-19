@@ -6,6 +6,8 @@ import com.marketgrid.orderservice.dto.OrderResponse;
 import com.marketgrid.orderservice.exception.ServiceUnavailableException;
 import com.marketgrid.orderservice.service.OrderService;
 import feign.FeignException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,6 +20,7 @@ import java.util.Map;
 /**
  * REST controller for checkout and order tracking operations.
  */
+@Tag(name = "Order Management", description = "Customer checkout, order tracking, and vendor order fulfillment")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -50,6 +53,7 @@ public class OrderController {
     /**
      * POST /api/orders/checkout — checks out the user's cart.
      */
+    @Operation(summary = "Checkout cart, decrement stock, and create order")
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(Authentication authentication) {
         try {
@@ -70,6 +74,7 @@ public class OrderController {
     /**
      * GET /api/orders — returns the authenticated user's order history.
      */
+    @Operation(summary = "Get order history for current authenticated customer")
     @GetMapping
     public ResponseEntity<?> getOrders(Authentication authentication) {
         try {
@@ -84,6 +89,7 @@ public class OrderController {
     /**
      * GET /api/orders/vendor/mine — returns orders containing items for the authenticated vendor.
      */
+    @Operation(summary = "Get orders containing items for the authenticated vendor (VENDOR role required)")
     @GetMapping("/vendor/mine")
     public ResponseEntity<?> getVendorOrders(Authentication authentication,
                                              @RequestHeader("Authorization") String authHeader) {
@@ -115,6 +121,7 @@ public class OrderController {
     /**
      * GET /api/orders/{orderId} — returns a single order belonging to the caller.
      */
+    @Operation(summary = "Get order details by order ID (owner only)")
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderById(@PathVariable Long orderId,
                                           Authentication authentication) {

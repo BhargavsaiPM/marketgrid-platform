@@ -4,6 +4,7 @@ com\marketgrid\userservice\controller\UserController.class
 com\marketgrid\userservice\entity\User.class
 com\marketgrid\userservice\dto\RegisterRequest.class
 com\marketgrid\userservice\util\JwtUtil.class
+com\marketgrid\userservice\config\OpenApiConfig.class
 com\marketgrid\userservice\repository\UserRepository.class
 com\marketgrid\userservice\dto\UserResponse.class
 com\marketgrid\userservice\dto\LoginResponse.class

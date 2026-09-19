@@ -21,6 +21,7 @@ com\marketgrid\orderservice\dto\OrderItemResponse.class
 com\marketgrid\orderservice\dto\VendorOrderGroupResponse.class
 com\marketgrid\orderservice\client\StockDecreaseRequest.class
 com\marketgrid\orderservice\client\LoginRequest.class
+com\marketgrid\orderservice\config\OpenApiConfig.class
 com\marketgrid\orderservice\client\VendorResponse.class
 com\marketgrid\orderservice\repository\OrderRepository.class
 com\marketgrid\orderservice\entity\CartItem.class

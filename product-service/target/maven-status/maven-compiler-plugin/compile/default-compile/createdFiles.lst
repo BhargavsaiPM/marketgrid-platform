@@ -2,6 +2,7 @@ com\marketgrid\productservice\security\SecurityConfig.class
 com\marketgrid\productservice\client\VendorResponse.class
 com\marketgrid\productservice\ProductServiceApplication.class
 com\marketgrid\productservice\config\FeignClientInterceptor.class
+com\marketgrid\productservice\config\OpenApiConfig.class
 com\marketgrid\productservice\util\JwtUtil.class
 com\marketgrid\productservice\client\VendorServiceClient.class
 com\marketgrid\productservice\dto\ProductResponse.class
