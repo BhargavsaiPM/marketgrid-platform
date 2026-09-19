@@ -17,6 +17,9 @@ spring:
       path: /h2-console
 
 eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
@@ -27,4 +30,13 @@ jwt:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
 

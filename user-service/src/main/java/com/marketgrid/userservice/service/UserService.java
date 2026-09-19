@@ -6,6 +6,7 @@ import com.marketgrid.userservice.repository.UserRepository;
 import com.marketgrid.userservice.util.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Core business logic for user registration and authentication.
@@ -30,6 +31,7 @@ public class UserService {
      *
      * @throws IllegalArgumentException if the username or email already exists
      */
+    @Transactional
     public User register(String username, String password, String email, Role role) {
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Username already exists: " + username);

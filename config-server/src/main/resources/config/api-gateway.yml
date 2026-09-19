@@ -6,6 +6,9 @@ server:
   port: 8080
 
 eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
@@ -13,6 +16,20 @@ eureka:
 # Shared secret key used across all MarketGrid services for JWT verification
 jwt:
   secret: bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==
+
+# Swagger UI Aggregation for all microservices
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /api/users/v3/api-docs
+      - name: Vendor Service
+        url: /api/vendors/v3/api-docs
+      - name: Product Service
+        url: /api/products/v3/api-docs
+      - name: Order Service
+        url: /api/orders/v3/api-docs
 
 spring:
   cloud:
@@ -40,8 +57,39 @@ spring:
               - Content-Type
               - "*"
 
-      # Explicit route definitions pointing to downstream microservices via Eureka (lb:// scheme)
+      # Route definitions pointing to downstream microservices via Eureka (lb:// scheme)
       routes:
+        # OpenAPI docs routes (rewriting /api/{service}/v3/api-docs to /v3/api-docs)
+        # Placed before business catch-all routes for correct path matching precedence
+        - id: user-service-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/v3/api-docs
+          filters:
+            - RewritePath=/api/users/v3/api-docs, /v3/api-docs
+
+        - id: vendor-service-docs
+          uri: lb://vendor-service
+          predicates:
+            - Path=/api/vendors/v3/api-docs
+          filters:
+            - RewritePath=/api/vendors/v3/api-docs, /v3/api-docs
+
+        - id: product-service-docs
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/v3/api-docs
+          filters:
+            - RewritePath=/api/products/v3/api-docs, /v3/api-docs
+
+        - id: order-service-docs
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/v3/api-docs
+          filters:
+            - RewritePath=/api/orders/v3/api-docs, /v3/api-docs
+
+        # Downstream business routes
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -61,3 +109,12 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/api/orders/**, /api/cart/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

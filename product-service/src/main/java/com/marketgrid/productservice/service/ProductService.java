@@ -3,11 +3,13 @@ package com.marketgrid.productservice.service;
 import com.marketgrid.productservice.client.VendorResponse;
 import com.marketgrid.productservice.client.VendorServiceClient;
 import com.marketgrid.productservice.entity.Product;
+import com.marketgrid.productservice.exception.ServiceUnavailableException;
 import com.marketgrid.productservice.repository.ProductRepository;
 import feign.FeignException;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,9 +42,11 @@ public class ProductService {
      * approved before persisting.</p>
      *
      * @return the created product with the vendor's {@code id} set as {@code vendorId}
-     * @throws IllegalStateException    if the vendor is not approved
-     * @throws IllegalArgumentException if no vendor profile is found for the user
+     * @throws IllegalStateException        if the vendor is not approved
+     * @throws IllegalArgumentException     if no vendor profile is found for the user
+     * @throws ServiceUnavailableException  if vendor-service cannot be reached
      */
+    @Transactional
     public Product createProduct(String name, String description,
                                  BigDecimal price, Integer stockQuantity,
                                  String category) {
@@ -55,8 +59,8 @@ public class ProductService {
             throw new IllegalArgumentException(
                     "No vendor profile found for your account. Register as a vendor first.");
         } catch (FeignException e) {
-            throw new RuntimeException(
-                    "Failed to reach vendor-service: " + e.getMessage(), e);
+            throw new ServiceUnavailableException(
+                    "Vendor service is temporarily unavailable, please try again shortly", e);
         }
 
         if (!vendor.isApproved()) {
@@ -107,9 +111,11 @@ public class ProductService {
      * (with the caller's JWT) and checking that the returned vendor ID
      * matches the product's vendorId.</p>
      *
-     * @throws IllegalArgumentException if product not found
-     * @throws SecurityException        if the requesting vendor doesn't own the product
+     * @throws IllegalArgumentException     if product not found
+     * @throws SecurityException            if the requesting vendor doesn't own the product
+     * @throws ServiceUnavailableException  if vendor-service cannot be reached
      */
+    @Transactional
     public Product updateProduct(Long productId, String name,
                                  String description, BigDecimal price,
                                  Integer stockQuantity, String category) {
@@ -122,6 +128,9 @@ public class ProductService {
             vendor = vendorServiceClient.getMyVendor();
         } catch (FeignException.NotFound e) {
             throw new SecurityException("No vendor profile found for your account.");
+        } catch (FeignException e) {
+            throw new ServiceUnavailableException(
+                    "Vendor service is temporarily unavailable, please try again shortly", e);
         }
 
         if (!product.getVendorId().equals(vendor.getId())) {
@@ -138,6 +147,41 @@ public class ProductService {
     }
 
     /**
+     * Delete a product. Only the owning vendor may delete.
+     *
+     * @param productId the ID of the product to delete
+     * @param requestingUserId the user ID from the caller's JWT
+     * @throws IllegalArgumentException     if product not found
+     * @throws SecurityException            if the requesting vendor doesn't own the product
+     * @throws ServiceUnavailableException  if vendor-service cannot be reached
+     */
+    @Transactional
+    public void deleteProduct(Long productId, Long requestingUserId) {
+        Product product = getProductById(productId);
+
+        // Verify ownership via the authenticated vendor profile
+        VendorResponse vendor;
+        try {
+            vendor = vendorServiceClient.getMyVendor();
+        } catch (FeignException.NotFound e) {
+            throw new SecurityException("No vendor profile found for your account.");
+        } catch (FeignException e) {
+            throw new ServiceUnavailableException(
+                    "Vendor service is temporarily unavailable, please try again shortly", e);
+        }
+
+        if (requestingUserId != null && vendor.getUserId() != null && !vendor.getUserId().equals(requestingUserId)) {
+            throw new SecurityException("You do not own this product");
+        }
+
+        if (!product.getVendorId().equals(vendor.getId())) {
+            throw new SecurityException("You do not own this product");
+        }
+
+        productRepository.delete(product);
+    }
+
+    /**
      * Decrement a product's stock by the given quantity.
      *
      * <p>Relies on JPA {@code @Version}-based optimistic locking to prevent
@@ -149,6 +193,7 @@ public class ProductService {
      * @throws IllegalArgumentException if product not found or insufficient stock
      * @throws IllegalStateException    if concurrent modification detected (client should retry)
      */
+    @Transactional
     public Product decreaseStock(Long productId, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Quantity to decrement must be a positive number");

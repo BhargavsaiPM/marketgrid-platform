@@ -120,6 +120,26 @@ public class VendorController {
     }
 
     /**
+     * DELETE /api/vendors/me — delete the authenticated user's vendor profile.
+     */
+    @Operation(summary = "Delete current authenticated vendor profile")
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteMe(Authentication authentication) {
+        try {
+            Long userId = extractUserId(authentication);
+            Vendor vendor = vendorService.getVendorByUserId(userId);
+            vendorService.deleteVendor(vendor.getId(), userId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", ex.getMessage()));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
      * GET /api/vendors/{vendorId} — public endpoint for browsing a single vendor.
      */
     @Operation(summary = "Get public vendor profile by vendor ID")

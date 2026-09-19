@@ -47,6 +47,13 @@ public class ProductController {
                 .anyMatch(a -> a.equals("ROLE_" + role));
     }
 
+    private Long extractUserId(Authentication auth) {
+        if (auth == null || auth.getDetails() == null) {
+            throw new SecurityException("User authentication details not found");
+        }
+        return (Long) auth.getDetails();
+    }
+
     // -----------------------------------------------------------
     // POST /api/products — create a product (VENDOR role required)
     // -----------------------------------------------------------
@@ -163,6 +170,35 @@ public class ProductController {
                     request.getCategory()
             );
             return ResponseEntity.ok(ProductResponse.fromEntity(updated));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", ex.getMessage()));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    // -----------------------------------------------------------
+    // DELETE /api/products/{productId} — delete product (owner only)
+    // -----------------------------------------------------------
+
+    /**
+     * Delete a product. Only the owning vendor may delete.
+     */
+    @Operation(summary = "Delete a product (owner vendor required)")
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long productId,
+                                           Authentication authentication) {
+        if (!hasRole(authentication, "VENDOR")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only users with the VENDOR role can delete products"));
+        }
+
+        try {
+            Long userId = extractUserId(authentication);
+            productService.deleteProduct(productId, userId);
+            return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", ex.getMessage()));

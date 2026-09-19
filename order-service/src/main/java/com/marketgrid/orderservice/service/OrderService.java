@@ -8,9 +8,11 @@ import com.marketgrid.orderservice.dto.OrderResponse;
 import com.marketgrid.orderservice.entity.Order;
 import com.marketgrid.orderservice.entity.OrderItem;
 import com.marketgrid.orderservice.entity.OrderItemStatus;
+import com.marketgrid.orderservice.exception.ServiceUnavailableException;
 import com.marketgrid.orderservice.repository.OrderItemRepository;
 import com.marketgrid.orderservice.repository.OrderRepository;
 import com.marketgrid.orderservice.security.ServiceAuthTokenProvider;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -92,6 +94,19 @@ public class OrderService {
                 BigDecimal lineTotal = cartItem.getPriceAtAddTime()
                         .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
                 confirmedTotal = confirmedTotal.add(lineTotal);
+            } catch (FeignException e) {
+                if (e.status() == 400 || e.status() == 404 || e.status() == 409) {
+                    // Item-level business failure: out of stock, product removed, or concurrency conflict
+                    log.warn("Stock decrement failed for product {} (HTTP {}): {}",
+                            cartItem.getProductId(), e.status(), e.getMessage());
+                    status = OrderItemStatus.FAILED;
+                } else {
+                    // product-service is down, unreachable, or 5xx/RetryableException
+                    log.error("product-service is unavailable during stock decrement for product {}: {}",
+                            cartItem.getProductId(), e.getMessage());
+                    throw new ServiceUnavailableException(
+                            "Product service is temporarily unavailable, please try again shortly", e);
+                }
             } catch (Exception e) {
                 log.warn("Failed to decrement stock for product {} during checkout: {}",
                         cartItem.getProductId(), e.getMessage());

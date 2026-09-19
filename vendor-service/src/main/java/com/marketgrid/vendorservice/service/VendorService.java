@@ -3,6 +3,7 @@ package com.marketgrid.vendorservice.service;
 import com.marketgrid.vendorservice.entity.Vendor;
 import com.marketgrid.vendorservice.repository.VendorRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class VendorService {
      *
      * @throws IllegalArgumentException if a vendor profile already exists for this userId
      */
+    @Transactional
     public Vendor registerVendor(Long userId, String businessName,
                                  String businessDescription,
                                  String contactPhone, String address) {
@@ -65,6 +67,7 @@ public class VendorService {
      * @throws IllegalArgumentException if vendorId not found
      * @throws SecurityException        if the requesting user doesn't own the vendor
      */
+    @Transactional
     public Vendor updateVendor(Long vendorId, Long requestingUserId,
                                String businessName, String businessDescription,
                                String contactPhone, String address) {
@@ -83,6 +86,23 @@ public class VendorService {
     }
 
     /**
+     * Delete a vendor profile. Only allowed if the requesting userId owns the vendor profile.
+     *
+     * @throws IllegalArgumentException if vendorId not found
+     * @throws SecurityException        if the requesting user doesn't own the vendor
+     */
+    @Transactional
+    public void deleteVendor(Long vendorId, Long requestingUserId) {
+        Vendor vendor = getVendorById(vendorId);
+
+        if (!vendor.getUserId().equals(requestingUserId)) {
+            throw new SecurityException("You do not own this vendor profile");
+        }
+
+        vendorRepository.delete(vendor);
+    }
+
+    /**
      * List all approved vendors (for customer-facing browsing).
      */
     public List<Vendor> getAllApprovedVendors() {
@@ -96,6 +116,7 @@ public class VendorService {
      * @return the updated Vendor entity
      * @throws IllegalArgumentException if vendor not found
      */
+    @Transactional
     public Vendor approveVendor(Long vendorId) {
         Vendor vendor = getVendorById(vendorId);
         vendor.setApproved(true);
@@ -109,6 +130,7 @@ public class VendorService {
      * @return the updated Vendor entity
      * @throws IllegalArgumentException if vendor not found
      */
+    @Transactional
     public Vendor rejectVendor(Long vendorId) {
         Vendor vendor = getVendorById(vendorId);
         vendor.setApproved(false);
@@ -124,4 +146,3 @@ public class VendorService {
         return vendorRepository.findByIsApprovedFalse();
     }
 }
-

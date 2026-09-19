@@ -43,6 +43,12 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <!-- Spring Boot Actuator -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- JJWT — same version as other services for edge token validation -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -60,6 +66,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- OpenAPI 3 / Swagger UI starter for WebFlux (Gateway aggregation) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

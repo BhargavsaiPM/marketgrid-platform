@@ -1,0 +1,23 @@
+# Target build directories
+target/
+**/target/
+
+# Version control
+.git/
+.gitignore
+
+# Logs and runtime PID tracking
+logs/
+pids/
+*.log
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db

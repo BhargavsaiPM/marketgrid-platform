@@ -11,12 +11,21 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  cloud:
+    openfeign:
+      httpclient:
+        hc5:
+          enabled: true
+
   h2:
     console:
       enabled: true
       path: /h2-console
 
 eureka:
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
@@ -32,4 +41,13 @@ service:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
 
