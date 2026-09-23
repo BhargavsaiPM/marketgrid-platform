@@ -21,3 +21,12 @@ pids/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Database data
+mysql-data/
+data/
+db-data/
+
+# Shell & PowerShell scripts
+*.sh
+*.ps1

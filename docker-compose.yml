@@ -1,5 +1,27 @@
 services:
   # ============================================================================
+  # 0. Centralized MySQL 8.4 Database Server
+  # ============================================================================
+  mysql:
+    image: mysql:8.4
+    container_name: marketgrid-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: marketgrid_user_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - marketgrid-network
+
+  # ============================================================================
   # 1. Service Discovery Registry (Eureka)
   # ============================================================================
   eureka-server:
@@ -14,8 +36,7 @@ services:
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
       - EUREKA_CLIENT_FETCH_REGISTRY=false
       - EUREKA_INSTANCE_HOSTNAME=eureka-server
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
       interval: 10s
@@ -39,8 +60,7 @@ services:
       - SERVER_PORT=8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=config-server
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -68,9 +88,10 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=user-service
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
+      mysql:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
       config-server:
@@ -99,9 +120,10 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=vendor-service
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
+      mysql:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
       config-server:
@@ -130,9 +152,10 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=product-service
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
+      mysql:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
       config-server:
@@ -161,9 +184,10 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=order-service
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
+      mysql:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
       config-server:
@@ -192,8 +216,7 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=api-gateway
-      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
-      - EUREKA_INSTANCE_IP_ADDRESS=
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -223,3 +246,9 @@ networks:
   marketgrid-network:
     driver: bridge
     name: marketgrid-network
+
+# ==============================================================================
+# Persistent Named Volume for MySQL 8.4 Data
+# ==============================================================================
+volumes:
+  mysql-data:

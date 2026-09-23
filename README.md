@@ -53,9 +53,32 @@ If accessing services directly during standalone development:
 
 ---
 
-## Startup Order
+## Running with Docker Compose (Single Command)
 
-To ensure configuration and discovery resolve correctly, start services in the following order. **`api-gateway` should start LAST** so that it can discover and route to all registered microservices immediately:
+All 7 microservices can be built and launched in strict dependency order using multi-stage Docker images and health checks:
+
+```bash
+# Build all images and start all containers in detached mode:
+docker compose up --build -d
+
+# Check status and health of all containers:
+docker compose ps
+
+# View live logs for all containers:
+docker compose logs -f
+
+# View live logs for a specific service (e.g. order-service, api-gateway):
+docker compose logs -f order-service
+
+# Stop and remove all containers and network cleanly:
+docker compose down
+```
+
+---
+
+## Local Startup (Without Docker)
+
+To run services locally without Docker, start services in the following order. **`api-gateway` should start LAST** so that it can discover and route to all registered microservices immediately:
 
 ```text
 1. eureka-server    → http://localhost:8761
