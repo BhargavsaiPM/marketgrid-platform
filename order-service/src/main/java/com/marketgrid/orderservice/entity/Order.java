@@ -10,7 +10,12 @@ import java.util.List;
  * Customer order entity.
  */
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    indexes = {
+        @Index(name = "idx_orders_user_id", columnList = "userId")
+    }
+)
 public class Order {
 
     @Id

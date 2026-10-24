@@ -12,7 +12,12 @@ import java.time.LocalDateTime;
  * rather than silently overselling.</p>
  */
 @Entity
-@Table(name = "products")
+@Table(
+    name = "products",
+    indexes = {
+        @Index(name = "idx_products_vendor_id", columnList = "vendorId")
+    }
+)
 public class Product {
 
     @Id
