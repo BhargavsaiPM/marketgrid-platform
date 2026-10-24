@@ -7,13 +7,7 @@ import java.math.BigDecimal;
  * Line item inside a customer order.
  */
 @Entity
-@Table(
-    name = "order_items",
-    indexes = {
-        @Index(name = "idx_order_items_vendor_id", columnList = "vendorId"),
-        @Index(name = "idx_order_items_order_id", columnList = "order_id")
-    }
-)
+@Table(name = "order_items")
 public class OrderItem {
 
     @Id
