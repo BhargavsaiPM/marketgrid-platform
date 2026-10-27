@@ -49,7 +49,7 @@ class ProductServiceTest {
         unapprovedVendor.setApproved(false);
 
         sampleProduct = new Product(5L, "Wireless Mouse", "Ergonomic",
-                new BigDecimal("29.99"), 20, "ELECTRONICS", "https://picsum.photos/seed/mouse/800/800");
+                new BigDecimal("29.99"), 20, "ELECTRONICS");
         sampleProduct.setId(50L);
     }
 
@@ -64,40 +64,6 @@ class ProductServiceTest {
         assertNotNull(created);
         assertEquals("Wireless Mouse", created.getName());
         assertEquals(5L, created.getVendorId());
-        verify(productRepository, times(1)).save(any(Product.class));
-    }
-
-    @Test
-    void testCreateProduct_WithImageUrl_Success() {
-        Product prodWithImg = new Product(5L, "Gaming Mouse", "RGB Mouse",
-                new BigDecimal("49.99"), 10, "ELECTRONICS", "https://picsum.photos/seed/gamingmouse/800/800");
-        prodWithImg.setId(51L);
-
-        when(vendorServiceClient.getMyVendor()).thenReturn(approvedVendor);
-        when(productRepository.save(any(Product.class))).thenReturn(prodWithImg);
-
-        Product created = productService.createProduct("Gaming Mouse", "RGB Mouse",
-                new BigDecimal("49.99"), 10, "ELECTRONICS", "https://picsum.photos/seed/gamingmouse/800/800");
-
-        assertNotNull(created);
-        assertEquals("https://picsum.photos/seed/gamingmouse/800/800", created.getImageUrl());
-        verify(productRepository, times(1)).save(any(Product.class));
-    }
-
-    @Test
-    void testCreateProduct_WithoutImageUrl_Success() {
-        Product prodWithoutImg = new Product(5L, "Basic Mouse", "Plain Mouse",
-                new BigDecimal("15.00"), 10, "ELECTRONICS", null);
-        prodWithoutImg.setId(52L);
-
-        when(vendorServiceClient.getMyVendor()).thenReturn(approvedVendor);
-        when(productRepository.save(any(Product.class))).thenReturn(prodWithoutImg);
-
-        Product created = productService.createProduct("Basic Mouse", "Plain Mouse",
-                new BigDecimal("15.00"), 10, "ELECTRONICS", null);
-
-        assertNotNull(created);
-        assertNull(created.getImageUrl());
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
