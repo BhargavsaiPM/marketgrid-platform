@@ -1,5 +1,6 @@
 package com.marketgrid.productservice.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 
 /**
@@ -13,16 +14,25 @@ public class ProductRequest {
     private Integer stockQuantity;
     private String category;
 
+    @Schema(description = "Optional URL of product image", example = "https://picsum.photos/seed/keyboard/800/800", maxLength = 1000)
+    private String imageUrl;
+
     public ProductRequest() {
     }
 
     public ProductRequest(String name, String description, BigDecimal price,
                           Integer stockQuantity, String category) {
+        this(name, description, price, stockQuantity, category, null);
+    }
+
+    public ProductRequest(String name, String description, BigDecimal price,
+                          Integer stockQuantity, String category, String imageUrl) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.stockQuantity = stockQuantity;
         this.category = category;
+        this.imageUrl = imageUrl;
     }
 
     public String getName() {
@@ -63,5 +73,13 @@ public class ProductRequest {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
