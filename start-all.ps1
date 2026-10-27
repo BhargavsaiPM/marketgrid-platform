@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # MarketGrid Commerce — Microservices Startup Orchestrator (PowerShell)
 # ==============================================================================
 # Starts all 7 microservices in strict dependency order, polling /actuator/health

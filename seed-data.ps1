@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # MarketGrid Commerce — Automated Demo Data Seeder (PowerShell)
 # ==============================================================================
 # Fills a freshly started platform with realistic demo data through the API

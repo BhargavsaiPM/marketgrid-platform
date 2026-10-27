@@ -14,7 +14,7 @@ services:
       - mysql-data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +38,7 @@ services:
       - EUREKA_INSTANCE_HOSTNAME=eureka-server
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -65,7 +65,7 @@ services:
       eureka-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -97,7 +97,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -129,7 +129,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -161,7 +161,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -193,7 +193,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -231,7 +231,7 @@ services:
       order-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -244,7 +244,7 @@ services:
 # ==============================================================================
 networks:
   marketgrid-network:
-    driver: bridge
+    external: true
     name: marketgrid-network
 
 # ==============================================================================

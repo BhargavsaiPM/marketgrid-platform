@@ -1,11 +1,11 @@
-server:
+﻿server:
   port: 8083
 
 spring:
   application:
     name: product-service
   config:
-    import: configserver:http://localhost:8888
+    import: configserver:http://config-server:8888
 
 springdoc:
   swagger-ui:
@@ -27,3 +27,4 @@ management:
   endpoint:
     health:
       show-details: always
+
