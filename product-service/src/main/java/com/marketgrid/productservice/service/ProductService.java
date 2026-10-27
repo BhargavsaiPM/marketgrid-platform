@@ -36,20 +36,21 @@ public class ProductService {
 
     /**
      * Create a new product for the authenticated vendor.
-     *
-     * <p>Calls {@code GET /api/vendors/me} on vendor-service (via Feign,
-     * forwarding the caller's JWT) to verify the vendor exists and is
-     * approved before persisting.</p>
-     *
-     * @return the created product with the vendor's {@code id} set as {@code vendorId}
-     * @throws IllegalStateException        if the vendor is not approved
-     * @throws IllegalArgumentException     if no vendor profile is found for the user
-     * @throws ServiceUnavailableException  if vendor-service cannot be reached
      */
     @Transactional
     public Product createProduct(String name, String description,
                                  BigDecimal price, Integer stockQuantity,
                                  String category) {
+        return createProduct(name, description, price, stockQuantity, category, null);
+    }
+
+    /**
+     * Create a new product for the authenticated vendor including optional image URL.
+     */
+    @Transactional
+    public Product createProduct(String name, String description,
+                                 BigDecimal price, Integer stockQuantity,
+                                 String category, String imageUrl) {
 
         // Call vendor-service to get the authenticated user's vendor profile
         VendorResponse vendor;
@@ -70,14 +71,12 @@ public class ProductService {
         }
 
         Product product = new Product(vendor.getId(), name, description,
-                price, stockQuantity, category);
+                price, stockQuantity, category, imageUrl);
         return productRepository.save(product);
     }
 
     /**
      * Retrieve a product by its primary key.
-     *
-     * @throws IllegalArgumentException if not found
      */
     public Product getProductById(Long productId) {
         return productRepository.findById(productId)
@@ -94,8 +93,6 @@ public class ProductService {
 
     /**
      * Retrieve all products, optionally filtered by category.
-     *
-     * @param category if non-null and non-blank, only products in this category are returned
      */
     public List<Product> getAllProducts(String category) {
         if (category != null && !category.isBlank()) {
@@ -106,19 +103,22 @@ public class ProductService {
 
     /**
      * Update a product's mutable fields. Only the owning vendor may update.
-     *
-     * <p>Ownership is verified by calling {@code GET /api/vendors/me}
-     * (with the caller's JWT) and checking that the returned vendor ID
-     * matches the product's vendorId.</p>
-     *
-     * @throws IllegalArgumentException     if product not found
-     * @throws SecurityException            if the requesting vendor doesn't own the product
-     * @throws ServiceUnavailableException  if vendor-service cannot be reached
      */
     @Transactional
     public Product updateProduct(Long productId, String name,
                                  String description, BigDecimal price,
                                  Integer stockQuantity, String category) {
+        return updateProduct(productId, name, description, price, stockQuantity, category, null);
+    }
+
+    /**
+     * Update a product's mutable fields including optional image URL. Only the owning vendor may update.
+     */
+    @Transactional
+    public Product updateProduct(Long productId, String name,
+                                 String description, BigDecimal price,
+                                 Integer stockQuantity, String category,
+                                 String imageUrl) {
 
         Product product = getProductById(productId);
 
@@ -142,18 +142,13 @@ public class ProductService {
         if (price != null)         product.setPrice(price);
         if (stockQuantity != null) product.setStockQuantity(stockQuantity);
         if (category != null)      product.setCategory(category);
+        if (imageUrl != null)      product.setImageUrl(imageUrl);
 
         return productRepository.save(product);
     }
 
     /**
      * Delete a product. Only the owning vendor may delete.
-     *
-     * @param productId the ID of the product to delete
-     * @param requestingUserId the user ID from the caller's JWT
-     * @throws IllegalArgumentException     if product not found
-     * @throws SecurityException            if the requesting vendor doesn't own the product
-     * @throws ServiceUnavailableException  if vendor-service cannot be reached
      */
     @Transactional
     public void deleteProduct(Long productId, Long requestingUserId) {
@@ -183,15 +178,6 @@ public class ProductService {
 
     /**
      * Decrement a product's stock by the given quantity.
-     *
-     * <p>Relies on JPA {@code @Version}-based optimistic locking to prevent
-     * overselling. If two concurrent requests both read the same stock level
-     * and try to decrement, the second will fail with an
-     * {@link OptimisticLockException}, which is caught here and translated
-     * to a clear retry message.</p>
-     *
-     * @throws IllegalArgumentException if product not found or insufficient stock
-     * @throws IllegalStateException    if concurrent modification detected (client should retry)
      */
     @Transactional
     public Product decreaseStock(Long productId, Integer quantity) {
