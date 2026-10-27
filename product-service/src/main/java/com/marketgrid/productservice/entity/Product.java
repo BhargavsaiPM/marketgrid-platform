@@ -37,9 +37,6 @@ public class Product {
 
     private String category;
 
-    @Column(length = 1000)
-    private String imageUrl;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -56,18 +53,12 @@ public class Product {
 
     public Product(Long vendorId, String name, String description,
                    BigDecimal price, Integer stockQuantity, String category) {
-        this(vendorId, name, description, price, stockQuantity, category, null);
-    }
-
-    public Product(Long vendorId, String name, String description,
-                   BigDecimal price, Integer stockQuantity, String category, String imageUrl) {
         this.vendorId = vendorId;
         this.name = name;
         this.description = description;
         this.price = price;
         this.stockQuantity = stockQuantity;
         this.category = category;
-        this.imageUrl = imageUrl;
     }
 
     @PrePersist
@@ -131,14 +122,6 @@ public class Product {
 
     public void setCategory(String category) {
         this.category = category;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

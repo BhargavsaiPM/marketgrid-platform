@@ -1,7 +1,6 @@
 package com.marketgrid.productservice.dto;
 
 import com.marketgrid.productservice.entity.Product;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,10 +17,6 @@ public class ProductResponse {
     private BigDecimal price;
     private Integer stockQuantity;
     private String category;
-
-    @Schema(description = "Optional URL of product image", example = "https://picsum.photos/seed/keyboard/800/800", maxLength = 1000)
-    private String imageUrl;
-
     private LocalDateTime createdAt;
 
     public ProductResponse() {
@@ -36,7 +31,6 @@ public class ProductResponse {
         r.price = product.getPrice();
         r.stockQuantity = product.getStockQuantity();
         r.category = product.getCategory();
-        r.imageUrl = product.getImageUrl();
         r.createdAt = product.getCreatedAt();
         return r;
     }
@@ -97,14 +91,6 @@ public class ProductResponse {
 
     public void setCategory(String category) {
         this.category = category;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

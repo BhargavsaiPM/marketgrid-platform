@@ -18,6 +18,10 @@ import java.util.Map;
 
 /**
  * REST controller for product catalog management.
+ *
+ * <p>Public GET endpoints allow browsing; protected POST/PUT endpoints
+ * require a VENDOR-role JWT; the PATCH stock endpoint accepts any valid
+ * JWT (intended for order-service calls).</p>
  */
 @Tag(name = "Product Management", description = "Product catalog browsing, vendor product creation, and stock updates")
 @RestController
@@ -74,8 +78,7 @@ public class ProductController {
                     request.getDescription(),
                     request.getPrice(),
                     request.getStockQuantity(),
-                    request.getCategory(),
-                    request.getImageUrl()
+                    request.getCategory()
             );
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ProductResponse.fromEntity(product));
@@ -164,8 +167,7 @@ public class ProductController {
                     request.getDescription(),
                     request.getPrice(),
                     request.getStockQuantity(),
-                    request.getCategory(),
-                    request.getImageUrl()
+                    request.getCategory()
             );
             return ResponseEntity.ok(ProductResponse.fromEntity(updated));
         } catch (IllegalArgumentException ex) {
@@ -213,12 +215,21 @@ public class ProductController {
     /**
      * Decrement a product's stock quantity. Intended for order-service
      * to call when an order is placed.
+     *
+     * <p>Requires any valid JWT (not restricted to VENDOR role).
+     * This endpoint relies on JPA optimistic locking to prevent overselling
+     * under concurrent requests.</p>
+     *
+     * <p><strong>TODO:</strong> Harden with service-to-service authentication
+     * (e.g. dedicated service account or mTLS) to prevent arbitrary callers
+     * from decrementing stock.</p>
      */
     @Operation(summary = "Decrement product stock quantity (ADMIN role required)")
     @PatchMapping("/{productId}/stock")
     public ResponseEntity<?> decreaseStock(@PathVariable Long productId,
                                            @RequestBody StockDecreaseRequest request,
                                            Authentication authentication) {
+        // TODO: In a production system, this should also allow trusted internal service-to-service calls (e.g. from order-service), not just ADMIN users.
         if (!hasRole(authentication, "ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only users with the ADMIN role can decrement stock"));
@@ -231,6 +242,7 @@ public class ProductController {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", ex.getMessage()));
         } catch (IllegalStateException ex) {
+            // Optimistic lock conflict — client should retry
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", ex.getMessage()));
         }
