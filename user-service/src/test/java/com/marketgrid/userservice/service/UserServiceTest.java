@@ -1,7 +1,9 @@
 package com.marketgrid.userservice.service;
 
+import com.marketgrid.userservice.dto.LoginResponse;
 import com.marketgrid.userservice.entity.Role;
 import com.marketgrid.userservice.entity.User;
+import com.marketgrid.userservice.exception.PortalMismatchException;
 import com.marketgrid.userservice.repository.UserRepository;
 import com.marketgrid.userservice.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ class UserServiceTest {
     private JwtUtil jwtUtil;
     private UserService userService;
     private User sampleUser;
+    private User adminUser;
 
     @BeforeEach
     void setUp() {
@@ -39,6 +42,9 @@ class UserServiceTest {
 
         sampleUser = new User("alice", "hashed_pass", "alice@example.com", Role.CUSTOMER);
         sampleUser.setId(1L);
+
+        adminUser = new User("admin", "hashed_admin_pass", "admin@example.com", Role.ADMIN);
+        adminUser.setId(99L);
     }
 
     @Test
@@ -48,7 +54,7 @@ class UserServiceTest {
         when(passwordEncoder.encode("plain_pass")).thenReturn("hashed_pass");
         when(userRepository.save(any(User.class))).thenReturn(sampleUser);
 
-        User created = userService.register("alice", "plain_pass", "alice@example.com", Role.CUSTOMER);
+        User created = userService.register("alice", "plain_pass", "alice@example.com", "CUSTOMER");
 
         assertNotNull(created);
         assertEquals("alice", created.getUsername());
@@ -57,11 +63,29 @@ class UserServiceTest {
     }
 
     @Test
+    void testRegister_AccountTypeAdmin_ThrowsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                userService.register("hacker", "pass", "hacker@example.com", "ADMIN"));
+
+        assertTrue(ex.getMessage().contains("Self-registration as ADMIN is strictly forbidden"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void testRegister_AccountTypeInvalid_ThrowsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                userService.register("user", "pass", "user@example.com", "SUPERUSER"));
+
+        assertTrue(ex.getMessage().contains("Invalid accountType"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void testRegister_DuplicateUsername() {
         when(userRepository.existsByUsername("alice")).thenReturn(true);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                userService.register("alice", "plain_pass", "alice@example.com", Role.CUSTOMER));
+                userService.register("alice", "plain_pass", "alice@example.com", "CUSTOMER"));
 
         assertTrue(ex.getMessage().contains("Username already exists"));
         verify(userRepository, never()).save(any(User.class));
@@ -73,7 +97,7 @@ class UserServiceTest {
         when(userRepository.existsByEmail("alice@example.com")).thenReturn(true);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                userService.register("bob", "plain_pass", "alice@example.com", Role.CUSTOMER));
+                userService.register("bob", "plain_pass", "alice@example.com", "CUSTOMER"));
 
         assertTrue(ex.getMessage().contains("Email already exists"));
         verify(userRepository, never()).save(any(User.class));
@@ -84,12 +108,38 @@ class UserServiceTest {
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("plain_pass", "hashed_pass")).thenReturn(true);
 
-        String token = userService.login("alice", "plain_pass");
+        LoginResponse response = userService.login("alice", "plain_pass", "CUSTOMER");
 
-        assertNotNull(token);
-        assertTrue(jwtUtil.validateToken(token));
-        assertEquals("alice", jwtUtil.getClaims(token).getSubject());
-        assertEquals("CUSTOMER", jwtUtil.getClaims(token).get("role", String.class));
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertEquals("CUSTOMER", response.getRole());
+        assertTrue(jwtUtil.validateToken(response.getToken()));
+        assertEquals("alice", jwtUtil.getClaims(response.getToken()).getSubject());
+        assertEquals("CUSTOMER", jwtUtil.getClaims(response.getToken()).get("role", String.class));
+    }
+
+    @Test
+    void testLogin_AdminPortalSuccess() {
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
+        when(passwordEncoder.matches("admin_pass", "hashed_admin_pass")).thenReturn(true);
+
+        LoginResponse response = userService.login("admin", "admin_pass", "ADMIN");
+
+        assertNotNull(response);
+        assertEquals("ADMIN", response.getRole());
+        assertTrue(jwtUtil.validateToken(response.getToken()));
+        assertEquals("ADMIN", jwtUtil.getClaims(response.getToken()).get("role", String.class));
+    }
+
+    @Test
+    void testLogin_WrongPortal_ThrowsPortalMismatchException() {
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(sampleUser)); // Role CUSTOMER
+        when(passwordEncoder.matches("plain_pass", "hashed_pass")).thenReturn(true);
+
+        PortalMismatchException ex = assertThrows(PortalMismatchException.class, () ->
+                userService.login("alice", "plain_pass", "VENDOR")); // Request VENDOR portal
+
+        assertTrue(ex.getMessage().contains("does not match requested portal"));
     }
 
     @Test
@@ -98,7 +148,7 @@ class UserServiceTest {
         when(passwordEncoder.matches("wrong_pass", "hashed_pass")).thenReturn(false);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                userService.login("alice", "wrong_pass"));
+                userService.login("alice", "wrong_pass", "CUSTOMER"));
 
         assertEquals("Invalid username or password", ex.getMessage());
     }
@@ -108,7 +158,7 @@ class UserServiceTest {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                userService.login("unknown", "any_pass"));
+                userService.login("unknown", "any_pass", null));
 
         assertEquals("Invalid username or password", ex.getMessage());
     }

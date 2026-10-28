@@ -56,14 +56,6 @@ if (-not $gatewayUp) {
 
 # ------------------------------------------------------------------------------
 # Helper Functions for API Calls
-
-function Get-ProductSlug {
-    param([string]$Name)
-    if ([string]::IsNullOrWhiteSpace($Name)) { return "product" }
-    $clean = $Name.ToLower() -replace '[^a-z0-9\s-]', '' -replace '\s+', '-' -replace '-+', '-'
-    return $clean.Trim('-')
-}
-
 # ------------------------------------------------------------------------------
 
 function Register-Or-Login-User {
@@ -75,10 +67,10 @@ function Register-Or-Login-User {
     )
 
     $regBody = @{
-        username = $Username
-        password = $Password
-        email    = $Email
-        role     = $Role
+        username    = $Username
+        password    = $Password
+        email       = $Email
+        accountType = $Role
     } | ConvertTo-Json
 
     # Try registering
@@ -93,6 +85,7 @@ function Register-Or-Login-User {
     $loginBody = @{
         username = $Username
         password = $Password
+        portal   = $Role
     } | ConvertTo-Json
 
     try {
@@ -254,7 +247,7 @@ Write-Host "  Seeded $($seededVendors.Count) approved vendors." -ForegroundColor
 # ------------------------------------------------------------------------------
 Write-Host ""
 Write-Host "[4/6] Seeding ~30 products across vendors..." -ForegroundColor Yellow
-Write-Host "  [Info] Generating deterministic imageUrls (https://picsum.photos/seed/<slug>/800/800) for products." -ForegroundColor DarkCyan
+Write-Host "  [Note] The product API model does not include an 'imageUrl' field; skipping image URLs." -ForegroundColor DarkGray
 
 $productCatalog = @(
     # Electronics (TechHub)
@@ -317,34 +310,9 @@ foreach ($prodDef in $productCatalog) {
 
     $matchedProd = $existingProds | Where-Object { $_ .name -eq $prodDef.Name }
 
-    $slug = Get-ProductSlug -Name $prodDef.Name
-    $imgUrl = "https://picsum.photos/seed/$slug/800/800"
-
     if ($matchedProd) {
-        # If product already exists without an imageUrl or needs updating, update via PUT
-        if ([string]::IsNullOrEmpty($matchedProd.imageUrl) -or $matchedProd.imageUrl -ne $imgUrl) {
-            $updateBody = @{
-                name          = $prodDef.Name
-                description   = $prodDef.Description
-                price         = $prodDef.Price
-                stockQuantity = $prodDef.Stock
-                category      = $prodDef.Category
-                imageUrl      = $imgUrl
-            } | ConvertTo-Json
-
-            try {
-                $updatedProd = Invoke-RestMethod -Uri "$GatewayUrl/api/products/$($matchedProd.id)" -Method Put -Body $updateBody -Headers $headers -ContentType "application/json" -ErrorAction Stop
-                Write-Host "  [^] Updated existing product with imageUrl: '$($prodDef.Name)' (ID: $($matchedProd.id))" -ForegroundColor Yellow
-                $allCreatedProducts += $updatedProd
-            }
-            catch {
-                Write-Host "  [=] Product exists: '$($prodDef.Name)' (ID: $($matchedProd.id)) (Update failed/skipped)" -ForegroundColor Gray
-                $allCreatedProducts += $matchedProd
-            }
-        } else {
-            Write-Host "  [=] Product already exists with image: '$($prodDef.Name)' (ID: $($matchedProd.id))" -ForegroundColor Gray
-            $allCreatedProducts += $matchedProd
-        }
+        Write-Host "  [=] Product already exists: '$($prodDef.Name)' (ID: $($matchedProd.id))" -ForegroundColor Gray
+        $allCreatedProducts += $matchedProd
     } else {
         $prodBody = @{
             name          = $prodDef.Name
@@ -352,7 +320,6 @@ foreach ($prodDef in $productCatalog) {
             price         = $prodDef.Price
             stockQuantity = $prodDef.Stock
             category      = $prodDef.Category
-            imageUrl      = $imgUrl
         } | ConvertTo-Json
 
         try {
@@ -490,9 +457,7 @@ Write-Host "====================================================================
 Write-Host "                       SEED DATA SUMMARY REPORT                                 " -ForegroundColor Magenta
 Write-Host "==============================================================================" -ForegroundColor Magenta
 Write-Host "  Vendors Created & Approved : $($seededVendors.Count)" -ForegroundColor Green
-$prodsWithImagesCount = ($allCreatedProducts | Where-Object { -not [string]::IsNullOrEmpty($_.imageUrl) }).Count
 Write-Host "  Products Seeding Total     : $($allCreatedProducts.Count)" -ForegroundColor Green
-Write-Host "  Products with Images       : $prodsWithImagesCount" -ForegroundColor Green
 Write-Host "  Customer Accounts Created  : $($seededCustomers.Count)" -ForegroundColor Green
 Write-Host "  Checkout Orders Placed     : $ordersCreatedCount" -ForegroundColor Green
 Write-Host "==============================================================================" -ForegroundColor Magenta
@@ -502,8 +467,8 @@ Write-Host "  • System Admin : username = admin         | password = Admin@123
 Write-Host "  • Demo Vendor  : username = tech_hub      | password = VendorPass123!" -ForegroundColor White
 Write-Host "  • Demo Buyer   : username = alice_buyer   | password = CustomerPass123!" -ForegroundColor White
 Write-Host ""
-Write-Host "IMAGE URL FIELD STATUS:" -ForegroundColor Green
-Write-Host "  • Configured: Every product includes a deterministic imageUrl." -ForegroundColor Green
+Write-Host "IMAGE URL FIELD STATUS:" -ForegroundColor DarkYellow
+Write-Host "  • Skipped: 'imageUrl' field does not exist in Product model on main branch." -ForegroundColor DarkYellow
 Write-Host ""
 Write-Host "==============================================================================" -ForegroundColor Magenta
 Write-Host "✓ SEEDING COMPLETED SUCCESSFULLY!" -ForegroundColor Green
