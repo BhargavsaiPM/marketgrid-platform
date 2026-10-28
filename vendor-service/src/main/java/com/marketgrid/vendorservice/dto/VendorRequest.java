@@ -1,13 +1,24 @@
 package com.marketgrid.vendorservice.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * Request body for POST /api/vendors/register and PUT /api/vendors/me.
  */
 public class VendorRequest {
 
+    @NotBlank(message = "Business name cannot be blank")
+    @Size(max = 255, message = "Business name cannot exceed 255 characters")
     private String businessName;
+
+    @Size(max = 1000, message = "Business description cannot exceed 1000 characters")
     private String businessDescription;
+
+    @Size(max = 50, message = "Contact phone cannot exceed 50 characters")
     private String contactPhone;
+
+    @Size(max = 500, message = "Address cannot exceed 500 characters")
     private String address;
 
     public VendorRequest() {
