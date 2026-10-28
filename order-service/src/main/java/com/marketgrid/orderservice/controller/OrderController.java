@@ -50,12 +50,23 @@ public class OrderController {
                 .anyMatch(a -> a.equals("ROLE_" + role));
     }
 
+    private ResponseEntity<?> requireCustomerRole(Authentication authentication) {
+        if (!hasRole(authentication, "CUSTOMER")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only users with the CUSTOMER role can perform customer order actions"));
+        }
+        return null;
+    }
+
     /**
      * POST /api/orders/checkout — checks out the user's cart.
      */
     @Operation(summary = "Checkout cart, decrement stock, and create order")
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(Authentication authentication) {
+        ResponseEntity<?> roleCheck = requireCustomerRole(authentication);
+        if (roleCheck != null) return roleCheck;
+
         try {
             Long userId = extractUserId(authentication);
             OrderResponse order = orderService.checkout(userId);
@@ -77,6 +88,9 @@ public class OrderController {
     @Operation(summary = "Get order history for current authenticated customer")
     @GetMapping
     public ResponseEntity<?> getOrders(Authentication authentication) {
+        ResponseEntity<?> roleCheck = requireCustomerRole(authentication);
+        if (roleCheck != null) return roleCheck;
+
         try {
             Long userId = extractUserId(authentication);
             List<OrderResponse> orders = orderService.getOrdersByUser(userId);
@@ -125,6 +139,9 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderById(@PathVariable Long orderId,
                                           Authentication authentication) {
+        ResponseEntity<?> roleCheck = requireCustomerRole(authentication);
+        if (roleCheck != null) return roleCheck;
+
         try {
             Long userId = extractUserId(authentication);
             OrderResponse order = orderService.getOrderById(orderId, userId);

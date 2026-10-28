@@ -1,6 +1,6 @@
 package com.marketgrid.userservice.dto;
 
-import com.marketgrid.userservice.entity.Role;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request body for POST /api/users/register.
@@ -10,16 +10,22 @@ public class RegisterRequest {
     private String username;
     private String password;
     private String email;
-    private Role role;
+
+    @Schema(description = "Account type: CUSTOMER or VENDOR (default CUSTOMER)", example = "CUSTOMER")
+    private String accountType;
 
     public RegisterRequest() {
     }
 
-    public RegisterRequest(String username, String password, String email, Role role) {
+    public RegisterRequest(String username, String password, String email) {
+        this(username, password, email, "CUSTOMER");
+    }
+
+    public RegisterRequest(String username, String password, String email, String accountType) {
         this.username = username;
         this.password = password;
         this.email = email;
-        this.role = role;
+        this.accountType = accountType;
     }
 
     public String getUsername() {
@@ -46,11 +52,11 @@ public class RegisterRequest {
         this.email = email;
     }
 
-    public Role getRole() {
-        return role;
+    public String getAccountType() {
+        return accountType;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
     }
 }

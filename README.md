@@ -111,7 +111,7 @@ Follow this step-by-step flow to verify all microservices working together end-t
 # Register Customer via Gateway
 curl -s -X POST http://localhost:8080/api/users/register \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "Password@123", "email": "alice@example.com", "role": "CUSTOMER"}'
+  -d '{"username": "alice", "password": "Password@123", "email": "alice@example.com", "accountType": "CUSTOMER"}'
 
 # Login Customer & save JWT
 CUSTOMER_TOKEN=$(curl -s -X POST http://localhost:8080/api/users/login \

@@ -167,4 +167,27 @@ class JwtAuthenticationFilterTest {
 
         assertTrue(chainCalled.get());
     }
+
+    @Test
+    void testProtectedPath_TamperedTokenReturns401() {
+        String validToken = generateValidToken();
+        String tamperedToken = validToken.substring(0, validToken.length() - 5) + "abcde";
+
+        MockServerHttpRequest request = MockServerHttpRequest.post("/api/orders/checkout")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tamperedToken)
+                .build();
+        MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+        AtomicBoolean chainCalled = new AtomicBoolean(false);
+        GatewayFilterChain chain = filterExchange -> {
+            chainCalled.set(true);
+            return Mono.empty();
+        };
+
+        StepVerifier.create(filter.filter(exchange, chain))
+                .verifyComplete();
+
+        assertFalse(chainCalled.get());
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+    }
 }
