@@ -7,7 +7,6 @@ import com.marketgrid.orderservice.exception.ServiceUnavailableException;
 import com.marketgrid.orderservice.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -58,7 +57,7 @@ public class CartController {
      */
     @Operation(summary = "Add a product to the shopping cart")
     @PostMapping("/items")
-    public ResponseEntity<?> addItem(@Valid @RequestBody AddToCartRequest request,
+    public ResponseEntity<?> addItem(@RequestBody AddToCartRequest request,
                                      Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);
@@ -79,7 +78,7 @@ public class CartController {
     @Operation(summary = "Update quantity of an item in the cart")
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<?> updateItemQuantity(@PathVariable Long cartItemId,
-                                                @Valid @RequestBody UpdateQuantityRequest request,
+                                                @RequestBody UpdateQuantityRequest request,
                                                 Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);

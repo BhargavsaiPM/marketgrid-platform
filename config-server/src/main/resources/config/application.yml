@@ -4,11 +4,12 @@
 
 eureka:
   instance:
-    prefer-ip-address: false
-    hostname: ${spring.application.name}
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
+
 management:
   endpoints:
     web:

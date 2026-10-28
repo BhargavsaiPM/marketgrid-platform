@@ -53,6 +53,24 @@ If accessing services directly during standalone development:
 
 ---
 
+---
+
+## 🔑 Environment Variables & Configuration
+
+MarketGrid Commerce externalizes database credentials, JWT secrets, and admin seed passwords.
+
+1. **Copy Environment Template**:
+
+2. **Key Variables in **:
+   - : Password for MySQL root user.
+   - , , , : Service-specific least-privilege DB user passwords.
+   - : Base64-encoded 256-bit secret key for JWT signatures.
+   - : Default initial password for seeded system administrator ().
+
+> **Zero-Setup Local Dev**: Local YML configurations include dev-only fallback defaults so local Maven runs and H2/local tests execute without requiring any environment setup.
+
+---
+
 ## Running with Docker Compose (Single Command)
 
 All 7 microservices can be built and launched in strict dependency order using multi-stage Docker images and health checks:

@@ -5,6 +5,7 @@ import com.marketgrid.userservice.entity.User;
 import com.marketgrid.userservice.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,9 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${seed.admin.password:Admin@12345}")
+    private String adminPassword;
+
     public DataSeeder(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -30,7 +34,7 @@ public class DataSeeder implements CommandLineRunner {
         if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = new User(
                     "admin",
-                    passwordEncoder.encode("Admin@12345"),
+                    passwordEncoder.encode(adminPassword),
                     "admin@marketgrid.com",
                     Role.ADMIN
             );

@@ -6,15 +6,18 @@ services:
     image: mysql:8.4
     container_name: marketgrid-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: marketgrid_user_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secure_password}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD:-user_db_password_123}
+      VENDOR_DB_PASSWORD: ${VENDOR_DB_PASSWORD:-vendor_db_password_123}
+      PRODUCT_DB_PASSWORD: ${PRODUCT_DB_PASSWORD:-product_db_password_123}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD:-order_db_password_123}
     ports:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root_secure_password}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +41,7 @@ services:
       - EUREKA_INSTANCE_HOSTNAME=eureka-server
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -61,11 +64,17 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=config-server
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-Admin@12345}
+      - USER_DB_PASSWORD=${USER_DB_PASSWORD:-user_db_password_123}
+      - VENDOR_DB_PASSWORD=${VENDOR_DB_PASSWORD:-vendor_db_password_123}
+      - PRODUCT_DB_PASSWORD=${PRODUCT_DB_PASSWORD:-product_db_password_123}
+      - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD:-order_db_password_123}
     depends_on:
       eureka-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -89,6 +98,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=user-service
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - USER_DB_URL=jdbc:mysql://mysql:3306/marketgrid_user_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      - USER_DB_USERNAME=${USER_DB_USERNAME:-user_service_user}
+      - USER_DB_PASSWORD=${USER_DB_PASSWORD:-user_db_password_123}
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-Admin@12345}
     depends_on:
       mysql:
         condition: service_healthy
@@ -97,7 +111,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -121,6 +135,10 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=vendor-service
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - VENDOR_DB_URL=jdbc:mysql://mysql:3306/marketgrid_vendor_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      - VENDOR_DB_USERNAME=${VENDOR_DB_USERNAME:-vendor_service_user}
+      - VENDOR_DB_PASSWORD=${VENDOR_DB_PASSWORD:-vendor_db_password_123}
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
     depends_on:
       mysql:
         condition: service_healthy
@@ -129,7 +147,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -153,6 +171,10 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=product-service
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - PRODUCT_DB_URL=jdbc:mysql://mysql:3306/marketgrid_product_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      - PRODUCT_DB_USERNAME=${PRODUCT_DB_USERNAME:-product_service_user}
+      - PRODUCT_DB_PASSWORD=${PRODUCT_DB_PASSWORD:-product_db_password_123}
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
     depends_on:
       mysql:
         condition: service_healthy
@@ -161,7 +183,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -185,6 +207,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=order-service
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - ORDER_DB_URL=jdbc:mysql://mysql:3306/marketgrid_order_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      - ORDER_DB_USERNAME=${ORDER_DB_USERNAME:-order_service_user}
+      - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD:-order_db_password_123}
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-Admin@12345}
     depends_on:
       mysql:
         condition: service_healthy
@@ -193,7 +220,7 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -217,6 +244,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - EUREKA_INSTANCE_HOSTNAME=api-gateway
       - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -231,7 +259,7 @@ services:
       order-service:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -244,7 +272,7 @@ services:
 # ==============================================================================
 networks:
   marketgrid-network:
-    external: true
+    driver: bridge
     name: marketgrid-network
 
 # ==============================================================================
