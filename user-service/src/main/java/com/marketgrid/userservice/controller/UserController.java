@@ -6,7 +6,6 @@ import com.marketgrid.userservice.entity.User;
 import com.marketgrid.userservice.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -34,7 +33,7 @@ public class UserController {
      */
     @Operation(summary = "Register a new user account as CUSTOMER or VENDOR")
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (request.getRole() == Role.ADMIN) {
             return ResponseEntity.badRequest().body(Map.of("error", "Cannot self-register as ADMIN"));
         }
@@ -61,7 +60,7 @@ public class UserController {
      */
     @Operation(summary = "Authenticate with credentials and obtain a JWT")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             String token = userService.login(request.getUsername(), request.getPassword());
             return ResponseEntity.ok(new LoginResponse(token));

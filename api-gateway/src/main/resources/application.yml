@@ -1,11 +1,11 @@
-﻿server:
+server:
   port: 8080
 
 spring:
   application:
     name: api-gateway
   config:
-    import: configserver:http://config-server:8888
+    import: configserver:http://localhost:8888
 
 eureka:
   instance:
@@ -23,4 +23,3 @@ management:
   endpoint:
     health:
       show-details: always
-

@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # MarketGrid Commerce — Shutdown Script (PowerShell)
 # ==============================================================================
 # Stops all MarketGrid services by closing active listeners on their respective ports:

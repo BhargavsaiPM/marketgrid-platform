@@ -6,7 +6,6 @@ import com.marketgrid.vendorservice.entity.Vendor;
 import com.marketgrid.vendorservice.service.VendorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -53,7 +52,7 @@ public class VendorController {
      */
     @Operation(summary = "Register a new vendor profile (VENDOR role required)")
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody VendorRequest request,
+    public ResponseEntity<?> register(@RequestBody VendorRequest request,
                                       Authentication authentication) {
         // Role check — must be VENDOR
         if (!hasRole(authentication, "VENDOR")) {
@@ -98,7 +97,7 @@ public class VendorController {
      */
     @Operation(summary = "Update current authenticated vendor profile")
     @PutMapping("/me")
-    public ResponseEntity<?> updateMe(@Valid @RequestBody VendorRequest request,
+    public ResponseEntity<?> updateMe(@RequestBody VendorRequest request,
                                       Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);

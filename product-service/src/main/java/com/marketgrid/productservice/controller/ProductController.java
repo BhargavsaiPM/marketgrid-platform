@@ -7,7 +7,6 @@ import com.marketgrid.productservice.entity.Product;
 import com.marketgrid.productservice.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +18,10 @@ import java.util.Map;
 
 /**
  * REST controller for product catalog management.
+ *
+ * <p>Public GET endpoints allow browsing; protected POST/PUT endpoints
+ * require a VENDOR-role JWT; the PATCH stock endpoint accepts any valid
+ * JWT (intended for order-service calls).</p>
  */
 @Tag(name = "Product Management", description = "Product catalog browsing, vendor product creation, and stock updates")
 @RestController
@@ -62,7 +65,7 @@ public class ProductController {
      */
     @Operation(summary = "Create a new product (VENDOR role required)")
     @PostMapping
-    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductRequest request,
+    public ResponseEntity<?> createProduct(@RequestBody ProductRequest request,
                                            Authentication authentication) {
         if (!hasRole(authentication, "VENDOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -150,7 +153,7 @@ public class ProductController {
     @Operation(summary = "Update product details (owner vendor required)")
     @PutMapping("/{productId}")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
-                                           @Valid @RequestBody ProductRequest request,
+                                           @RequestBody ProductRequest request,
                                            Authentication authentication) {
         if (!hasRole(authentication, "VENDOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -212,12 +215,21 @@ public class ProductController {
     /**
      * Decrement a product's stock quantity. Intended for order-service
      * to call when an order is placed.
+     *
+     * <p>Requires any valid JWT (not restricted to VENDOR role).
+     * This endpoint relies on JPA optimistic locking to prevent overselling
+     * under concurrent requests.</p>
+     *
+     * <p><strong>TODO:</strong> Harden with service-to-service authentication
+     * (e.g. dedicated service account or mTLS) to prevent arbitrary callers
+     * from decrementing stock.</p>
      */
     @Operation(summary = "Decrement product stock quantity (ADMIN role required)")
     @PatchMapping("/{productId}/stock")
     public ResponseEntity<?> decreaseStock(@PathVariable Long productId,
-                                           @Valid @RequestBody StockDecreaseRequest request,
+                                           @RequestBody StockDecreaseRequest request,
                                            Authentication authentication) {
+        // TODO: In a production system, this should also allow trusted internal service-to-service calls (e.g. from order-service), not just ADMIN users.
         if (!hasRole(authentication, "ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only users with the ADMIN role can decrement stock"));

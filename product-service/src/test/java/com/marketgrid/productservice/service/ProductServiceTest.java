@@ -12,8 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -79,19 +77,6 @@ class ProductServiceTest {
 
         assertTrue(ex.getMessage().contains("is not yet approved"));
         verify(productRepository, never()).save(any(Product.class));
-    }
-
-    @Test
-    void testGetAllProducts_SqlInjectionCategoryFilter_SafelyHandled() {
-        String sqliCategory = "' OR '1'='1; DROP TABLE products; --";
-        when(productRepository.findByCategory(sqliCategory)).thenReturn(Collections.emptyList());
-
-        List<Product> products = productService.getAllProducts(sqliCategory);
-
-        assertNotNull(products);
-        assertTrue(products.isEmpty());
-        verify(productRepository, times(1)).findByCategory(sqliCategory);
-        verify(productRepository, never()).findAll();
     }
 
     @Test

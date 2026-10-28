@@ -38,6 +38,12 @@ Before running the scripts, make sure the following are installed and in your en
 
 ## 🚀 Execution Workflow
 
+### Step 0: Configure Environment Variables (Optional for Docker)
+
+Copy  to  to customize passwords and JWT secrets:
+
+---
+
 ### Step 1: Start All 7 Microservices
 
 In your Git Bash terminal, run:

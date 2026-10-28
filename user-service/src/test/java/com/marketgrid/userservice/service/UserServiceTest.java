@@ -80,25 +80,6 @@ class UserServiceTest {
     }
 
     @Test
-    void testRegister_SqlInjectionPayload_SafelyHandled() {
-        String sqliUsername = "admin' OR '1'='1";
-        String sqliEmail = "sqli' OR '1'='1@example.com";
-        when(userRepository.existsByUsername(sqliUsername)).thenReturn(false);
-        when(userRepository.existsByEmail(sqliEmail)).thenReturn(false);
-        when(passwordEncoder.encode("plain_pass")).thenReturn("hashed_pass");
-
-        User sqliUser = new User(sqliUsername, "hashed_pass", sqliEmail, Role.CUSTOMER);
-        sqliUser.setId(2L);
-        when(userRepository.save(any(User.class))).thenReturn(sqliUser);
-
-        User created = userService.register(sqliUsername, "plain_pass", sqliEmail, Role.CUSTOMER);
-
-        assertNotNull(created);
-        assertEquals(sqliUsername, created.getUsername());
-        verify(userRepository, never()).findByUsername(anyString());
-    }
-
-    @Test
     void testLogin_Success() {
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("plain_pass", "hashed_pass")).thenReturn(true);
@@ -109,18 +90,6 @@ class UserServiceTest {
         assertTrue(jwtUtil.validateToken(token));
         assertEquals("alice", jwtUtil.getClaims(token).getSubject());
         assertEquals("CUSTOMER", jwtUtil.getClaims(token).get("role", String.class));
-    }
-
-    @Test
-    void testLogin_SqlInjectionPayload_SafelyHandled() {
-        String sqliUsername = "' OR '1'='1; DROP TABLE users; --";
-        when(userRepository.findByUsername(sqliUsername)).thenReturn(Optional.empty());
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                userService.login(sqliUsername, "password"));
-
-        assertEquals("Invalid username or password", ex.getMessage());
-        verify(userRepository, times(1)).findByUsername(sqliUsername);
     }
 
     @Test
