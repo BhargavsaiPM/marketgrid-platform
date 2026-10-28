@@ -1,11 +1,12 @@
 package com.marketgrid.userservice.controller;
 
 import com.marketgrid.userservice.dto.*;
+import com.marketgrid.userservice.entity.Role;
 import com.marketgrid.userservice.entity.User;
-import com.marketgrid.userservice.exception.PortalMismatchException;
 import com.marketgrid.userservice.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -29,17 +30,24 @@ public class UserController {
 
     /**
      * POST /api/users/register
-     * Public — creates a new user account as CUSTOMER or VENDOR.
+     * Public — creates a new user account.
      */
     @Operation(summary = "Register a new user account as CUSTOMER or VENDOR")
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (request.getRole() == Role.ADMIN) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Cannot self-register as ADMIN"));
+        }
+        if (request.getRole() != Role.CUSTOMER && request.getRole() != Role.VENDOR) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Role must be either CUSTOMER or VENDOR"));
+        }
+
         try {
             User user = userService.register(
                     request.getUsername(),
                     request.getPassword(),
                     request.getEmail(),
-                    request.getAccountType()
+                    request.getRole()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.fromEntity(user));
         } catch (IllegalArgumentException ex) {
@@ -49,21 +57,14 @@ public class UserController {
 
     /**
      * POST /api/users/login
-     * Public — authenticates credentials, enforces portal alignment, and returns JWT with role.
+     * Public — authenticates and returns a JWT.
      */
-    @Operation(summary = "Authenticate with credentials and obtain a JWT token and user role")
+    @Operation(summary = "Authenticate with credentials and obtain a JWT")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
-            LoginResponse response = userService.login(
-                    request.getUsername(),
-                    request.getPassword(),
-                    request.getPortal()
-            );
-            return ResponseEntity.ok(response);
-        } catch (PortalMismatchException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", ex.getMessage()));
+            String token = userService.login(request.getUsername(), request.getPassword());
+            return ResponseEntity.ok(new LoginResponse(token));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", ex.getMessage()));
