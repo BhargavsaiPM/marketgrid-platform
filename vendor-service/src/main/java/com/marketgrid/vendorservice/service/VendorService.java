@@ -71,9 +71,19 @@ public class VendorService {
     public Vendor updateVendor(Long vendorId, Long requestingUserId,
                                String businessName, String businessDescription,
                                String contactPhone, String address) {
+        return updateVendorById(vendorId, requestingUserId, false, businessName, businessDescription, contactPhone, address);
+    }
+
+    /**
+     * Update a vendor's mutable fields by ID, checking ownership or ADMIN rights.
+     */
+    @Transactional
+    public Vendor updateVendorById(Long vendorId, Long requestingUserId, boolean isAdmin,
+                                   String businessName, String businessDescription,
+                                   String contactPhone, String address) {
         Vendor vendor = getVendorById(vendorId);
 
-        if (!vendor.getUserId().equals(requestingUserId)) {
+        if (!isAdmin && !vendor.getUserId().equals(requestingUserId)) {
             throw new SecurityException("You do not own this vendor profile");
         }
 
@@ -86,16 +96,21 @@ public class VendorService {
     }
 
     /**
-     * Delete a vendor profile. Only allowed if the requesting userId owns the vendor profile.
-     *
-     * @throws IllegalArgumentException if vendorId not found
-     * @throws SecurityException        if the requesting user doesn't own the vendor
+     * Delete a vendor profile. Allowed if the requesting userId owns the vendor profile or is ADMIN.
      */
     @Transactional
     public void deleteVendor(Long vendorId, Long requestingUserId) {
+        deleteVendor(vendorId, requestingUserId, false);
+    }
+
+    /**
+     * Delete a vendor profile by ID with ownership/ADMIN permission check.
+     */
+    @Transactional
+    public void deleteVendor(Long vendorId, Long requestingUserId, boolean isAdmin) {
         Vendor vendor = getVendorById(vendorId);
 
-        if (!vendor.getUserId().equals(requestingUserId)) {
+        if (!isAdmin && !vendor.getUserId().equals(requestingUserId)) {
             throw new SecurityException("You do not own this vendor profile");
         }
 
