@@ -52,15 +52,6 @@ public class OrderService {
 
     /**
      * Executes the checkout process for the customer's cart.
-     *
-     * <p>TODO: Distributed transaction consistency between order-service and product-service
-     * is a known simplification for this project; a production system would use a saga pattern
-     * or event-driven compensation.</p>
-     *
-     * @param userId the ID of the customer checking out
-     * @return the created Order with line item outcomes
-     * @throws IllegalArgumentException if cart is empty
-     * @throws IllegalStateException if all items fail to checkout
      */
     @Transactional
     public OrderResponse checkout(Long userId) {
@@ -96,12 +87,10 @@ public class OrderService {
                 confirmedTotal = confirmedTotal.add(lineTotal);
             } catch (FeignException e) {
                 if (e.status() == 400 || e.status() == 404 || e.status() == 409) {
-                    // Item-level business failure: out of stock, product removed, or concurrency conflict
                     log.warn("Stock decrement failed for product {} (HTTP {}): {}",
                             cartItem.getProductId(), e.status(), e.getMessage());
                     status = OrderItemStatus.FAILED;
                 } else {
-                    // product-service is down, unreachable, or 5xx/RetryableException
                     log.error("product-service is unavailable during stock decrement for product {}: {}",
                             cartItem.getProductId(), e.getMessage());
                     throw new ServiceUnavailableException(
@@ -126,7 +115,6 @@ public class OrderService {
 
         // 4. Validate partial/complete success
         if (confirmedCount == 0) {
-            // All items failed — leave cart intact and abort order creation
             throw new IllegalStateException(
                     "All items in cart failed to checkout due to stock or service unavailability. Cart preserved.");
         }
@@ -142,14 +130,19 @@ public class OrderService {
     }
 
     /**
-     * Fetch a specific order by ID and verify customer ownership.
+     * Fetch a specific order by ID and verify customer ownership or ADMIN status.
      */
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId, Long userId) {
+        return getOrderById(orderId, userId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderById(Long orderId, Long userId, boolean isAdmin) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
 
-        if (!order.getUserId().equals(userId)) {
+        if (!isAdmin && !order.getUserId().equals(userId)) {
             throw new SecurityException("You do not own this order");
         }
 
@@ -157,7 +150,7 @@ public class OrderService {
     }
 
     /**
-     * List all past orders for a customer, grouped by vendor.
+     * List all past orders for a customer.
      */
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByUser(Long userId) {
@@ -167,9 +160,17 @@ public class OrderService {
     }
 
     /**
+     * List all orders (ADMIN only).
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(OrderResponse::fromEntity)
+                .toList();
+    }
+
+    /**
      * List orders containing items belonging to a specific vendor.
-     * Crucially filters items so the vendor only sees their own items, not items
-     * from other vendors within the same customer order.
      */
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByVendor(Long vendorId) {
@@ -183,5 +184,26 @@ public class OrderService {
                         Comparator.comparing(Order::getCreatedAt).reversed()))
                 .map(entry -> OrderResponse.fromEntityWithItems(entry.getKey(), entry.getValue()))
                 .toList();
+    }
+
+    /**
+     * Cancel an existing order by marking its line items as FAILED.
+     */
+    @Transactional
+    public OrderResponse cancelOrder(Long orderId, Long userId, boolean isAdmin) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
+
+        if (!isAdmin && !order.getUserId().equals(userId)) {
+            throw new SecurityException("You do not own this order");
+        }
+
+        for (OrderItem item : order.getItems()) {
+            item.setStatus(OrderItemStatus.FAILED);
+        }
+
+        order.setTotalAmount(BigDecimal.ZERO);
+        Order updated = orderRepository.save(order);
+        return OrderResponse.fromEntity(updated);
     }
 }

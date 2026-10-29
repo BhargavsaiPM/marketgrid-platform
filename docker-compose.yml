@@ -1,26 +1,25 @@
+version: '3.8'
+
 services:
   # ============================================================================
-  # 0. Centralized MySQL 8.4 Database Server
+  # 0. MySQL Database Server
   # ============================================================================
   mysql:
     image: mysql:8.4
     container_name: marketgrid-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secure_password}
-      USER_DB_PASSWORD: ${USER_DB_PASSWORD:-user_db_password_123}
-      VENDOR_DB_PASSWORD: ${VENDOR_DB_PASSWORD:-vendor_db_password_123}
-      PRODUCT_DB_PASSWORD: ${PRODUCT_DB_PASSWORD:-product_db_password_123}
-      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD:-order_db_password_123}
     ports:
       - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password_123}
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root_secure_password}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     networks:
       - marketgrid-network
 
@@ -156,7 +155,7 @@ services:
       - marketgrid-network
 
   # ============================================================================
-  # 5. Product Catalog & Inventory Microservice
+  # 5. Product Catalog & Inventory Microservice (Instance 1)
   # ============================================================================
   product-service:
     build:
@@ -184,6 +183,42 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || true"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+    networks:
+      - marketgrid-network
+
+  # ============================================================================
+  # 5b. Product Catalog & Inventory Microservice (Instance 2)
+  # ============================================================================
+  product-service-2:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    container_name: product-service-2
+    ports:
+      - "8085:8085"
+    environment:
+      - SERVER_PORT=8085
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_INSTANCE_HOSTNAME=product-service-2
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
+      - PRODUCT_DB_URL=jdbc:mysql://mysql:3306/marketgrid_product_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+      - PRODUCT_DB_USERNAME=${PRODUCT_DB_USERNAME:-product_service_user}
+      - PRODUCT_DB_PASSWORD=${PRODUCT_DB_PASSWORD:-product_db_password_123}
+      - JWT_SECRET=${JWT_SECRET:-bWFya2V0Z3JpZC1jb21tZXJjZS1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjAyNg==}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || true"]
       interval: 10s
       timeout: 5s
       retries: 12

@@ -1,11 +1,15 @@
 package com.marketgrid.vendorservice.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 /**
  * Request body for POST /api/vendors/register and PUT /api/vendors/me.
  */
 public class VendorRequest {
 
+    @NotBlank(message = "Business name is required")
     private String businessName;
+
     private String businessDescription;
     private String contactPhone;
     private String address;

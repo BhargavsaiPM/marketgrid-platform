@@ -7,21 +7,21 @@ import com.marketgrid.productservice.entity.Product;
 import com.marketgrid.productservice.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
 /**
- * REST controller for product catalog management.
- *
- * <p>Public GET endpoints allow browsing; protected POST/PUT endpoints
- * require a VENDOR-role JWT; the PATCH stock endpoint accepts any valid
- * JWT (intended for order-service calls).</p>
+ * REST controller for product catalog, stock updates, and vendor management.
  */
 @Tag(name = "Product Management", description = "Product catalog browsing, vendor product creation, and stock updates")
 @RestController
@@ -29,6 +29,9 @@ import java.util.Map;
 public class ProductController {
 
     private final ProductService productService;
+
+    @Value("${server.port:8083}")
+    private String serverPort;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
@@ -55,17 +58,33 @@ public class ProductController {
     }
 
     // -----------------------------------------------------------
+    // GET /api/products/instance-info — Load Balancing Diagnostic
+    // -----------------------------------------------------------
+
+    @Operation(summary = "Get service instance diagnostic info for load balancing demonstration")
+    @GetMapping("/instance-info")
+    public ResponseEntity<Map<String, String>> getInstanceInfo() {
+        String hostname;
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "unknown-host";
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "service", "product-service",
+                "port", serverPort,
+                "hostname", hostname
+        ));
+    }
+
+    // -----------------------------------------------------------
     // POST /api/products — create a product (VENDOR role required)
     // -----------------------------------------------------------
 
-    /**
-     * Create a new product. The vendorId is resolved from the JWT via
-     * a Feign call to vendor-service ({@code GET /api/vendors/me}),
-     * not from the request body, to prevent spoofing.
-     */
     @Operation(summary = "Create a new product (VENDOR role required)")
     @PostMapping
-    public ResponseEntity<?> createProduct(@RequestBody ProductRequest request,
+    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductRequest request,
                                            Authentication authentication) {
         if (!hasRole(authentication, "VENDOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -83,7 +102,6 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ProductResponse.fromEntity(product));
         } catch (IllegalStateException ex) {
-            // Vendor not approved
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
@@ -96,10 +114,6 @@ public class ProductController {
     // GET /api/products — list all products (public, optional filter)
     // -----------------------------------------------------------
 
-    /**
-     * Browse all products. Pass an optional {@code ?category=Electronics}
-     * query parameter to filter by category.
-     */
     @Operation(summary = "Browse all products with optional category filter")
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts(
@@ -146,14 +160,10 @@ public class ProductController {
     // PUT /api/products/{productId} — update product (owner only)
     // -----------------------------------------------------------
 
-    /**
-     * Update a product. Only the owning vendor (verified via JWT → Feign
-     * call to vendor-service) may update.
-     */
     @Operation(summary = "Update product details (owner vendor required)")
     @PutMapping("/{productId}")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
-                                           @RequestBody ProductRequest request,
+                                           @Valid @RequestBody ProductRequest request,
                                            Authentication authentication) {
         if (!hasRole(authentication, "VENDOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -183,9 +193,6 @@ public class ProductController {
     // DELETE /api/products/{productId} — delete product (owner only)
     // -----------------------------------------------------------
 
-    /**
-     * Delete a product. Only the owning vendor may delete.
-     */
     @Operation(summary = "Delete a product (owner vendor required)")
     @DeleteMapping("/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId,
@@ -212,24 +219,11 @@ public class ProductController {
     // PATCH /api/products/{productId}/stock — decrement stock
     // -----------------------------------------------------------
 
-    /**
-     * Decrement a product's stock quantity. Intended for order-service
-     * to call when an order is placed.
-     *
-     * <p>Requires any valid JWT (not restricted to VENDOR role).
-     * This endpoint relies on JPA optimistic locking to prevent overselling
-     * under concurrent requests.</p>
-     *
-     * <p><strong>TODO:</strong> Harden with service-to-service authentication
-     * (e.g. dedicated service account or mTLS) to prevent arbitrary callers
-     * from decrementing stock.</p>
-     */
     @Operation(summary = "Decrement product stock quantity (ADMIN role required)")
     @PatchMapping("/{productId}/stock")
     public ResponseEntity<?> decreaseStock(@PathVariable Long productId,
                                            @RequestBody StockDecreaseRequest request,
                                            Authentication authentication) {
-        // TODO: In a production system, this should also allow trusted internal service-to-service calls (e.g. from order-service), not just ADMIN users.
         if (!hasRole(authentication, "ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only users with the ADMIN role can decrement stock"));
@@ -242,7 +236,6 @@ public class ProductController {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", ex.getMessage()));
         } catch (IllegalStateException ex) {
-            // Optimistic lock conflict — client should retry
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", ex.getMessage()));
         }

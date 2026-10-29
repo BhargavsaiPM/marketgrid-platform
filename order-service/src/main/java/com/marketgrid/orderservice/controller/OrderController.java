@@ -51,6 +51,15 @@ public class OrderController {
     }
 
     /**
+     * POST /api/orders — Create order by checking out user's cart.
+     */
+    @Operation(summary = "Create an order by checking out the current user's cart")
+    @PostMapping
+    public ResponseEntity<?> createOrder(Authentication authentication) {
+        return checkout(authentication);
+    }
+
+    /**
      * POST /api/orders/checkout — checks out the user's cart.
      */
     @Operation(summary = "Checkout cart, decrement stock, and create order")
@@ -72,14 +81,15 @@ public class OrderController {
     }
 
     /**
-     * GET /api/orders — returns the authenticated user's order history.
+     * GET /api/orders — returns the authenticated user's order history or all orders for ADMIN.
      */
-    @Operation(summary = "Get order history for current authenticated customer")
+    @Operation(summary = "Get order history for current authenticated customer or all orders if ADMIN")
     @GetMapping
     public ResponseEntity<?> getOrders(Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);
-            List<OrderResponse> orders = orderService.getOrdersByUser(userId);
+            boolean isAdmin = hasRole(authentication, "ADMIN");
+            List<OrderResponse> orders = isAdmin ? orderService.getAllOrders() : orderService.getOrdersByUser(userId);
             return ResponseEntity.ok(orders);
         } catch (SecurityException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
@@ -119,20 +129,62 @@ public class OrderController {
     }
 
     /**
-     * GET /api/orders/{orderId} — returns a single order belonging to the caller.
+     * GET /api/orders/{orderId} — returns a single order belonging to the caller or ADMIN.
      */
-    @Operation(summary = "Get order details by order ID (owner only)")
+    @Operation(summary = "Get order details by order ID (owner or ADMIN required)")
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderById(@PathVariable Long orderId,
                                           Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);
-            OrderResponse order = orderService.getOrderById(orderId, userId);
+            boolean isAdmin = hasRole(authentication, "ADMIN");
+            OrderResponse order = orderService.getOrderById(orderId, userId, isAdmin);
             return ResponseEntity.ok(order);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
         } catch (SecurityException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
         }
+    }
+
+    /**
+     * PUT /api/orders/{orderId} — update or cancel order status where business rules permit.
+     */
+    @Operation(summary = "Update or cancel an order by ID (Owner or ADMIN required)")
+    @PutMapping("/{orderId}")
+    public ResponseEntity<?> updateOrder(@PathVariable Long orderId,
+                                         Authentication authentication) {
+        return cancelOrder(orderId, authentication);
+    }
+
+    /**
+     * PUT /api/orders/{orderId}/cancel — cancel an order.
+     */
+    @Operation(summary = "Cancel an order by ID (Owner or ADMIN required)")
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId,
+                                         Authentication authentication) {
+        try {
+            Long userId = extractUserId(authentication);
+            boolean isAdmin = hasRole(authentication, "ADMIN");
+            OrderResponse cancelled = orderService.cancelOrder(orderId, userId, isAdmin);
+            return ResponseEntity.ok(cancelled);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/orders/{orderId} — cancel/delete an order according to business rules.
+     */
+    @Operation(summary = "Cancel/delete an order by ID (Owner or ADMIN required)")
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<?> deleteOrder(@PathVariable Long orderId,
+                                         Authentication authentication) {
+        return cancelOrder(orderId, authentication);
     }
 }

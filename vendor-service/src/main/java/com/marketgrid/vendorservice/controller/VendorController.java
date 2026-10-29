@@ -6,6 +6,7 @@ import com.marketgrid.vendorservice.entity.Vendor;
 import com.marketgrid.vendorservice.service.VendorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,9 @@ public class VendorController {
     // Helper: extract userId stashed by JwtAuthenticationFilter
     // -----------------------------------------------------------
     private Long extractUserId(Authentication auth) {
+        if (auth == null || auth.getDetails() == null) {
+            throw new SecurityException("User authentication details not found");
+        }
         return (Long) auth.getDetails();
     }
 
@@ -46,15 +50,24 @@ public class VendorController {
     }
 
     /**
+     * POST /api/vendors — Create/register a vendor profile.
+     */
+    @Operation(summary = "Create a vendor profile (VENDOR role required)")
+    @PostMapping
+    public ResponseEntity<?> createVendor(@Valid @RequestBody VendorRequest request,
+                                          Authentication authentication) {
+        return register(request, authentication);
+    }
+
+    /**
      * POST /api/vendors/register — create a vendor profile.
      * Only users with role VENDOR may call this. The userId comes from the JWT,
      * not the request body, to prevent spoofing.
      */
     @Operation(summary = "Register a new vendor profile (VENDOR role required)")
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody VendorRequest request,
+    public ResponseEntity<?> register(@Valid @RequestBody VendorRequest request,
                                       Authentication authentication) {
-        // Role check — must be VENDOR
         if (!hasRole(authentication, "VENDOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only users with the VENDOR role can register a vendor profile"));
@@ -97,13 +110,41 @@ public class VendorController {
      */
     @Operation(summary = "Update current authenticated vendor profile")
     @PutMapping("/me")
-    public ResponseEntity<?> updateMe(@RequestBody VendorRequest request,
+    public ResponseEntity<?> updateMe(@Valid @RequestBody VendorRequest request,
                                       Authentication authentication) {
         try {
             Long userId = extractUserId(authentication);
             Vendor vendor = vendorService.getVendorByUserId(userId);
             Vendor updated = vendorService.updateVendor(
                     vendor.getId(), userId,
+                    request.getBusinessName(),
+                    request.getBusinessDescription(),
+                    request.getContactPhone(),
+                    request.getAddress()
+            );
+            return ResponseEntity.ok(VendorResponse.fromEntity(updated));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", ex.getMessage()));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
+     * PUT /api/vendors/{vendorId} — update vendor details by ID.
+     */
+    @Operation(summary = "Update vendor profile by ID (Owner vendor or ADMIN required)")
+    @PutMapping("/{vendorId}")
+    public ResponseEntity<?> updateVendorById(@PathVariable Long vendorId,
+                                              @Valid @RequestBody VendorRequest request,
+                                              Authentication authentication) {
+        try {
+            Long userId = extractUserId(authentication);
+            boolean isAdmin = hasRole(authentication, "ADMIN");
+            Vendor updated = vendorService.updateVendorById(
+                    vendorId, userId, isAdmin,
                     request.getBusinessName(),
                     request.getBusinessDescription(),
                     request.getContactPhone(),
@@ -128,7 +169,28 @@ public class VendorController {
         try {
             Long userId = extractUserId(authentication);
             Vendor vendor = vendorService.getVendorByUserId(userId);
-            vendorService.deleteVendor(vendor.getId(), userId);
+            vendorService.deleteVendor(vendor.getId(), userId, false);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", ex.getMessage()));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/vendors/{vendorId} — delete or deactivate vendor profile by ID.
+     */
+    @Operation(summary = "Delete or deactivate vendor profile by ID (Owner vendor or ADMIN required)")
+    @DeleteMapping("/{vendorId}")
+    public ResponseEntity<?> deleteVendorById(@PathVariable Long vendorId,
+                                              Authentication authentication) {
+        try {
+            Long userId = extractUserId(authentication);
+            boolean isAdmin = hasRole(authentication, "ADMIN");
+            vendorService.deleteVendor(vendorId, userId, isAdmin);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

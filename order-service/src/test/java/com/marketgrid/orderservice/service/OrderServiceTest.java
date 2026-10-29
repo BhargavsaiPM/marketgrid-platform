@@ -145,4 +145,36 @@ class OrderServiceTest {
         assertEquals(1, results.get(0).getVendorGroups().size());
         assertEquals(5L, results.get(0).getVendorGroups().get(0).getVendorId());
     }
+
+    @Test
+    void testCancelOrder_SuccessForOwner() {
+        Order order = new Order(1L);
+        order.setId(50L);
+        order.setTotalAmount(new BigDecimal("100.00"));
+        order.setCreatedAt(LocalDateTime.now());
+        OrderItem item = new OrderItem(order, 100L, 5L, 2, new BigDecimal("50.00"), OrderItemStatus.CONFIRMED);
+        order.getItems().add(item);
+
+        when(orderRepository.findById(50L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+
+        OrderResponse res = orderService.cancelOrder(50L, 1L, false);
+
+        assertNotNull(res);
+        assertEquals(BigDecimal.ZERO, res.getTotalAmount());
+        assertEquals(OrderItemStatus.FAILED, res.getVendorGroups().get(0).getItems().get(0).getStatus());
+    }
+
+    @Test
+    void testCancelOrder_UnauthorizedOtherUser_ThrowsSecurityException() {
+        Order order = new Order(1L);
+        order.setId(50L);
+
+        when(orderRepository.findById(50L)).thenReturn(Optional.of(order));
+
+        SecurityException ex = assertThrows(SecurityException.class, () ->
+                orderService.cancelOrder(50L, 2L, false));
+
+        assertTrue(ex.getMessage().contains("You do not own this order"));
+    }
 }
